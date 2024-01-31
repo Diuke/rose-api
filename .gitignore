@@ -1,0 +1,3 @@
+/notebooks/.ipynb_checkpoints
+/notebooks/*.csv
+__pycache__
