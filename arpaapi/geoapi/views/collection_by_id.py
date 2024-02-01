@@ -56,30 +56,6 @@ def collection_by_id(request: HttpRequest, collectionId: str):
         else:
             #single insert
             items = body.get("items")
-
-        """
-        if 'latitude' in body and 'longitude' in body:
-            body['location'] = Point(x=body['longitude'], y=body['latitude'])
-
-        if 'date_start' in body:
-            # expect dd/mm/yyyy or null
-            if body['date_start'] is not None:
-                date_start_parts = str(body['date_start']).split("/")
-                body['date_start'] = datetime.date(
-                    int(date_start_parts[2].lstrip('0')), 
-                    int(date_start_parts[1].lstrip('0')), 
-                    int(date_start_parts[0].lstrip('0'))
-            )
-        if 'date_stop' in body:
-            # expect dd/mm/yyyy or null
-            if body['date_stop'] is not None:
-                date_stop_parts = str(body['date_stop']).split("/")
-                body['date_stop'] = datetime.date(
-                    int(date_stop_parts[2].lstrip('0')), 
-                    int(date_stop_parts[1].lstrip('0')), 
-                    int(date_stop_parts[0].lstrip('0'))
-            )
-        """
             
         model_name = collectionId
         collection_model = apps.get_model('geoapi', model_name=model_name)
@@ -87,6 +63,6 @@ def collection_by_id(request: HttpRequest, collectionId: str):
             new_items = collection_model.objects.bulk_create([collection_model(**item) for item in items ], ignore_conflicts=True)
         except Exception as ex:
             print(ex)
-            return HttpResponse("Duplicated", status=500)
+            return HttpResponse("Error", status=500)
         
         return HttpResponse(new_items, status=200)

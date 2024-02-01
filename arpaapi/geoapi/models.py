@@ -1,8 +1,8 @@
+from abc import ABC, abstractmethod
+
 from django.db import models
 from django.contrib.gis.db import models as gis_models
 from django.utils.translation import gettext_lazy as _
-
-
 
 class Collections(models.Model):
     class API_Types(models.TextChoices):
@@ -13,6 +13,9 @@ class Collections(models.Model):
     description = models.CharField(max_length=100)
     model_name = models.CharField(max_length=100)
 
+    # Field of the /locations query for EDR collections
+    locations_field = models.CharField(max_length=100, null=True, default=None)
+
     api_type = models.CharField(
         max_length=8,
         choices=API_Types,
@@ -20,12 +23,11 @@ class Collections(models.Model):
     )
 
 
-    def __str__(self):
+    def __str__(self): 
         return f'{self.title} ({self.model_name})' 
     
     class Meta():
         verbose_name_plural = "collections"
-
 
 # GeoJSON enabled
 class AirQualitySensor(models.Model):

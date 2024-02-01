@@ -1,6 +1,46 @@
 import datetime as dt
 from django.shortcuts import HttpResponse
 from django.contrib.gis.geos import Point
+from django.db.models.manager import BaseManager
+from geoapi import models as geoapi_models
+
+def filter(items: BaseManager[any], filter_field: str, filter_argument: any):
+    items = items.filter(**{filter_field: filter_argument})
+    return items
+
+def paginate(items: BaseManager[any], limit: int | None, offset: int):
+    # pagination
+    number_matched = items.count()
+    if number_matched < offset: offset = number_matched
+
+    # if no limit, fetch all data
+    if limit is None:
+        items = items[offset:]
+    else: 
+        limit = int(limit)
+        if (offset+limit) > number_matched: limit = number_matched - offset
+        items = items[offset:(offset+limit)]
+
+    number_returned = len(items)
+    return items, number_returned, number_matched 
+
+def filter_datetime(items: BaseManager[any]):
+    return items
+
+def filter_bbox(items: BaseManager[any], bbox: [], base_model: any, ):
+    geom_field_name = base_model.get_geometry_field()
+    return items
+
+def process_datetime_interval():
+    """
+    interval-closed     = date-time "/" date-time
+    interval-open-start = "../" date-time
+    interval-open-end   = date-time "/.."
+    interval            = interval-closed / interval-open-start / interval-open-end
+    datetime            = date-time / interval
+    """
+    pass
+
 
 def map_columns(column_name):
     #sensors
@@ -42,12 +82,6 @@ def map_columns(column_name):
         return 'value'
     else: #no valid column
         return None 
-
-def response_400_bad_request(msg="", wrong_param=""):
-    return HttpResponse(msg, status=400)
-
-def response_200_json():
-    return HttpResponse("", status=400)
 
 example_item = {
     "sensor_id": 10431,
