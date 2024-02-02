@@ -22,7 +22,6 @@ class Collections(models.Model):
         default=API_Types.FEATURES,
     )
 
-
     def __str__(self): 
         return f'{self.title} ({self.model_name})' 
     
@@ -55,15 +54,27 @@ class AirQualitySensor(models.Model):
             "utm_north", "utm_east", "latitude", "longitude"
         ]
     
+    def get_filtering_fields():
+        return [
+            "sensor_id", "sensor_type", "station_id", "station_name", "province", "comune", "is_historical"
+        ]
+
     def get_geometry_field():
         return "location"
+    
+    def get_geometry_filter_field():
+        return "location"
+    
+    def get_datetime_field():
+        return None
+    
 
     class Meta():
         verbose_name_plural = "Air Quality Sensors"
 
 class AirQualityMeasurement(models.Model):
     #IdSensore,Data,Valore,Stato,idOperatore 
-    #size: 8+8+10+4 = 30 bytes
+    #size: 8+8+10+4 = 30 bytes 
     sensor_id = models.ForeignKey(AirQualitySensor, on_delete=models.CASCADE, null=True)
     date = models.DateTimeField()
     value = models.DecimalField(decimal_places=4, max_digits=10) # 000000.0000
@@ -79,8 +90,19 @@ class AirQualityMeasurement(models.Model):
             "sensor_id", "date", "value"
         ]
     
+    def get_filtering_fields():
+        return [
+            "sensor_id"
+        ]
+    
     def get_geometry_field():
         return "location"
+    
+    def get_geometry_filter_field():
+        return "sensor_id__location" 
+    
+    def get_datetime_field():
+        return "date"
     
     class Meta():
         verbose_name_plural = "Air Quality Measurements"

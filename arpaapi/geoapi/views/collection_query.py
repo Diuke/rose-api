@@ -1,168 +1,226 @@
-import json
-import datetime
-import csv
-
-from django.db.models import Q
-from django.shortcuts import HttpResponse
 from django.apps import apps
 from django.http import HttpRequest
-from django.contrib.gis.geos import Point
-from django.core.exceptions import ValidationError
-from django.core import serializers
 
 from geoapi import utils
 from geoapi import models as geoapi_models
 from geoapi import responses
 from geoapi import serializers as geoapi_serializers
 
+"""
+query parameters:
+f = Format. Example: "json" or "geojson"
+limit = Max number of elements. Used for pagination
+offset = Initial element. Used for pagination
+bbox = For filtering in a bounding box. Example: 10.010,45.312,10.048,45.719
+datetime = Datetime range for filtering by datetime. It can be a closed interval (2023-01-01/2023-02-28), or open interval (2023-01-01/.. or ../2023-02-28)
+"param" = It is a dynamic parameter for filtering according to the properties of the collection. 
+"""
+
+#GLOBAL CONSTANTS
 LIMIT_DEFAULT = 100
+MAX_ELEMENTS = 100000
+POSITION = "position"
+RADIUS = "radius"
+AREA = "area"
+CUBE = "cube"
+TRAJECTORY = "trajectory"
+CORRIDOR = "corridor"
+ITEMS = "items"
+LOCATIONS = "locations"
+INSTANCES = "instances"
+SUPPORTED_QUERIES = [
+    ITEMS, LOCATIONS
+]
 
 def collection_query(request: HttpRequest, collectionId: str, query: str):
-    ITEMS = "items"
-    POSITION = "position"
-    LOCATIONS = "locations"
-    
-    supported_queries = [
-        ITEMS, POSITION, LOCATIONS
-    ]
-
     model_name = collectionId
     collection = geoapi_models.Collections.objects.get(model_name=model_name)
     collection_model = apps.get_model('geoapi', model_name=model_name)
 
-    if query in supported_queries:
-        if query == ITEMS: 
-            items = collection_model.objects.all()
+    if query == POSITION:
+        return responses.response_bad_request_400("Position query not yet supported")  
+    
+    elif query == RADIUS:   
+        return responses.response_bad_request_400("Radius query not yet supported")
 
-            # Query parameters
-            datetime_param = request.GET.get('datetime', None)
-            skip_geometry = request.GET.get('skipGeometry', False)
-            limit = request.GET.get('limit', LIMIT_DEFAULT) #100 elements by default
-            offset = int(request.GET.get('offset', 0))
-            f = request.GET.get('f', 'json')
+    elif query == AREA: 
+        return responses.response_bad_request_400("Area query not yet supported")
+    
+    elif query == CUBE: 
+        return responses.response_bad_request_400("Cube query not yet supported")
+    
+    elif query == TRAJECTORY: 
+        return responses.response_bad_request_400("Trajectory query not yet supported")
+    
+    elif query == CORRIDOR: 
+        return responses.response_bad_request_400("Corridor query not yet supported")
+    
+    elif query == ITEMS: 
+        items = collection_model.objects.all()
 
-            #filters
-            #datetime filter            
+        # Query parameters
+        bbox = request.GET.get('bbox', None)
+        datetime_param = request.GET.get('datetime', None)
+        skip_geometry = request.GET.get('skipGeometry', None)
+        if skip_geometry is not None:
+            skip_geometry = True if skip_geometry == "true" else False
+        limit = int(request.GET.get('limit', LIMIT_DEFAULT)) #100 elements by default
+        offset = int(request.GET.get('offset', 0))
 
-            # pagination
-            if limit is None:
-                if collection.api_type == geoapi_models.Collections.API_Types.EDR:
-                    return responses.response_bad_request_400("Limit must be set!")
+        filtering_params = {}
+        for field in collection_model.get_filtering_fields():
+            filtering_params[field] = request.GET.get(field, None)
+            #validate boolean fields
+            if filtering_params[field] == 'true': filtering_params[field] = True
+            if filtering_params[field] == 'false': filtering_params[field] = False
 
-            items, retrieved_elements, full_count = utils.paginate(items, limit, offset)
+        f = request.GET.get('f', 'json')
 
-            # Maximum 100.000 elements in request
-            if retrieved_elements >= 100000:
-                print("too many elements")
-                return responses.response_bad_request_400("Too many elements")
-
-            # build links
-            links = []
-
-            # format (f) parameter
-            # Last part and return
-            if f == 'geojson':
-                fields = collection_model.get_fields()
-                geometry_field = collection_model.get_geometry_field() if not skip_geometry else None
-                serializer = geoapi_serializers.EDRGeoJSONSerializer()
-                options = {
-                    "number_matched": full_count, 
-                    "number_returned": retrieved_elements, 
-                    "links": links,
-                    "geometry_field": geometry_field, 
-                    "fields": fields
-                }
-                items_serialized = serializer.serialize(items, **options)
-                return responses.return_geojson_200(items_serialized)
-
-            elif f == 'json':
-                fields = collection_model.get_fields()
-                serializer = geoapi_serializers.SimpleJsonSerializer()
-                items_serialized = serializer.serialize(items, fields=fields)
-                return responses.return_json_200(items_serialized)
-
-            elif f == 'csv':
-                #TODO Add support for CSV format
-                return responses.response_bad_request_400("Format CSV not yet supported")
+        #filters
+        # bbox filter
+        if bbox is not None:
+            bbox = bbox.split(",")
+            print(bbox)
+            #validate bbox
+            if not (isinstance(bbox, list) and len(bbox) == 4):
+                return responses.response_bad_request_400("malformed bbox parameter")
+            try:
+                bbox = [ float(el) for el in bbox ]
+            except Exception as ex:
+                print(ex)
+                return responses.response_bad_request_400("malformed bbox parameter")
             
-            elif f == 'html':
-                #TODO Add render for HTML format
-                return responses.response_bad_request_400("Format HTML not yet supported")
-            
-            else:
-                return responses.response_bad_request_400(f"Format {f} not yet supported")
+            items = utils.filter_bbox(items, bbox, collection_model)
 
-        if query == POSITION: 
-            pass
+        # datetime filter
+        datetime_field = collection_model.get_datetime_field()
+        if datetime_param is not None:
+            # if the collection has a datetime field to filter
+            if datetime_field is not None:
+                start_date, end_date = utils.process_datetime_interval(datetime_param)
+                items = utils.filter_datetime(items, start_date, end_date, datetime_field)
 
-        if query == LOCATIONS: 
-            # Query parameters
-            location_id = request.GET.get('locationId', None)
-            datetime_param = request.GET.get('datetime', None)
-            parameter_name = request.GET.get('parameter-name', None)
-            skip_geometry = request.GET.get('skipGeometry', False)
-            crs = request.GET.get('crs', None)
-            limit = request.GET.get('limit', LIMIT_DEFAULT ) #100 elements by default
-            offset = request.GET.get('offset', 0)
-            f = request.GET.get('f', 'json')
+        # model fields filters
+        for field in collection_model.get_filtering_fields():
+            if filtering_params[field] is not None:
+                items = utils.filter(items, field, filtering_params[field])
 
-            if location_id is None:
-                #TODO return a list of available locations - that is the list of sensors available
-                return responses.return_geojson_200([])
-            
-            else: 
-                items = collection_model.objects.all()
-                location_id = int(location_id)
-                location_filter_field = collection.locations_field
-                items = utils.filter(items, location_filter_field, location_id)
-
-            # pagination
-            if limit is None:
+        # Maximum 100.000 elements in request
+        items_count = items.count()
+        if limit > MAX_ELEMENTS and items_count > MAX_ELEMENTS:
+            print("too many elements")
+            return responses.response_bad_request_400("Too many elements")
+        
+        # pagination
+        if limit is None:
+            if collection.api_type == geoapi_models.Collections.API_Types.EDR:
                 return responses.response_bad_request_400("Limit must be set!")
 
-            items, retrieved_elements, full_count = utils.paginate(items, limit, offset)
+        items, retrieved_elements, full_count = utils.paginate(items, limit, offset)
 
-            if retrieved_elements >= 100000:
-                return responses.response_bad_request_400("Too many elements")
+        # build links
+        links = []
+
+        # format (f) parameter
+        # Last part and return
+        if f == 'geojson':
+            fields = collection_model.get_fields()
+            geometry_field = None if skip_geometry else collection_model.get_geometry_field()
+            serializer = geoapi_serializers.EDRGeoJSONSerializer()
+            options = {
+                "number_matched": full_count, 
+                "number_returned": retrieved_elements, 
+                "links": links,
+                "geometry_field": geometry_field, 
+                "fields": fields
+            }
+            items_serialized = serializer.serialize(items, **options)
+            return responses.return_geojson_200(items_serialized)
+
+        elif f == 'json':
+            fields = collection_model.get_fields()
+            serializer = geoapi_serializers.SimpleJsonSerializer()
+            items_serialized = serializer.serialize(items, fields=fields)
+            return responses.return_json_200(items_serialized)
+
+        elif f == 'csv':
+            #TODO Add support for CSV format
+            return responses.response_bad_request_400("Format CSV not yet supported")
+        
+        elif f == 'html':
+            #TODO Add render for HTML format
+            return responses.response_bad_request_400("Format HTML not yet supported")
+        
+        else:
+            return responses.response_bad_request_400(f"Format {f} not yet supported")
+
+    elif query == LOCATIONS: 
+        # Query parameters
+        location_id = request.GET.get('locationId', None)
+        datetime_param = request.GET.get('datetime', None)
+        parameter_name = request.GET.get('parameter-name', None)
+        skip_geometry = request.GET.get('skipGeometry', False)
+        crs = request.GET.get('crs', None)
+        limit = request.GET.get('limit', LIMIT_DEFAULT ) #100 elements by default
+        offset = request.GET.get('offset', 0)
+        f = request.GET.get('f', 'json')
+
+        if location_id is None:
+            #TODO return a list of available locations - that is the list of sensors available
+            return responses.return_geojson_200([])
+        
+        else: 
+            items = collection_model.objects.all()
+            location_id = int(location_id)
+            location_filter_field = collection.locations_field
+            items = utils.filter(items, location_filter_field, location_id)
+
+        # pagination
+        if limit is None:
+            return responses.response_bad_request_400("Limit must be set!")
+
+        items, retrieved_elements, full_count = utils.paginate(items, limit, offset)
+
+        if retrieved_elements >= 100000:
+            return responses.response_bad_request_400("Too many elements")
+        
+        # build links
+        links = []
+
+        # Format and response
+        if f == 'geojson':
+            fields = collection_model.get_fields()
+            geometry_field = collection_model.get_geometry_field() if not skip_geometry else None
+            serializer = geoapi_serializers.EDRGeoJSONSerializer()
+            options = {
+                "number_matched": full_count, 
+                "number_returned": retrieved_elements, 
+                "geometry_field": geometry_field, 
+                "fields": fields,
+                "links": links
+            }
+            items_serialized = serializer.serialize(items, **options)
+            return responses.return_geojson_200(items_serialized)
+
+        elif f == 'json':
+            fields = collection_model.get_fields()
+            serializer = geoapi_serializers.SimpleJsonSerializer()
+            items_serialized = serializer.serialize(items, fields=fields)
+            return responses.return_json_200(items_serialized)
+
+        elif f == 'csv':
+            #TODO Add support for CSV format
+            return responses.response_bad_request_400("Format CSV not yet supported")
+        
+        elif f == 'html':
+            #TODO Add render for HTML format
+            return responses.response_bad_request_400("Format HTML not yet supported")
+        
+        else:
+            return responses.response_bad_request_400(f"Format {f} not yet supported")
+
+    elif query == INSTANCES: 
+        return responses.response_bad_request_400("Instances query not yet supported")
             
-            # build links
-            links = []
-
-            # Format and response
-            if f == 'geojson':
-                fields = collection_model.get_fields()
-                geometry_field = collection_model.get_geometry_field() if not skip_geometry else None
-                serializer = geoapi_serializers.EDRGeoJSONSerializer()
-                options = {
-                    "number_matched": full_count, 
-                    "number_returned": retrieved_elements, 
-                    "geometry_field": geometry_field, 
-                    "fields": fields,
-                    "links": links
-                }
-                items_serialized = serializer.serialize(items, **options)
-                return responses.return_geojson_200(items_serialized)
-
-            elif f == 'json':
-                fields = collection_model.get_fields()
-                serializer = geoapi_serializers.SimpleJsonSerializer()
-                items_serialized = serializer.serialize(items, fields=fields)
-                return responses.return_json_200(items_serialized)
-
-            elif f == 'csv':
-                #TODO Add support for CSV format
-                return responses.response_bad_request_400("Format CSV not yet supported")
-            
-            elif f == 'html':
-                #TODO Add render for HTML format
-                return responses.response_bad_request_400("Format HTML not yet supported")
-            
-            else:
-                return responses.response_bad_request_400(f"Format {f} not yet supported")
-
-
-
-            
-
     else:
         return responses.response_bad_request_400("Query not supported")

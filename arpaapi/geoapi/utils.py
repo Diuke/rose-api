@@ -1,8 +1,13 @@
 import datetime as dt
 from django.shortcuts import HttpResponse
-from django.contrib.gis.geos import Point
+from django.contrib.gis.geos import Point, Polygon
 from django.db.models.manager import BaseManager
 from geoapi import models as geoapi_models
+from django.db.models import Q
+
+def filter_by_dict(items: BaseManager[any], query: dict):
+    items = items.filter(**query)
+    return items
 
 def filter(items: BaseManager[any], filter_field: str, filter_argument: any):
     items = items.filter(**{filter_field: filter_argument})
@@ -24,22 +29,68 @@ def paginate(items: BaseManager[any], limit: int | None, offset: int):
     number_returned = len(items)
     return items, number_returned, number_matched 
 
-def filter_datetime(items: BaseManager[any]):
+def filter_datetime(items: BaseManager[any], start_date: dt.datetime, end_date: dt.datetime, datetime_field: str):
+    #(date__range=["2011-01-01", "2011-01-31"])
+    filter_dict = {}
+    if start_date is not None: filter_dict[f'{datetime_field}__gte'] = start_date
+    if end_date is not None: filter_dict[f'{datetime_field}__lte'] = end_date
+    items = filter_by_dict(items, filter_dict)
     return items
 
-def filter_bbox(items: BaseManager[any], bbox: [], base_model: any, ):
-    geom_field_name = base_model.get_geometry_field()
+def filter_bbox(items: BaseManager[any], bbox: list[str], base_model: any, ):
+    geom_field_name = base_model.get_geometry_filter_field()
+    bbox_polygon = Polygon.from_bbox(bbox)
+    print(bbox_polygon)
+    print(geom_field_name)
+    filter_dict = {f'{geom_field_name}__within': bbox_polygon}
+    print(filter_dict)
+    items = items.filter(**filter_dict)
     return items
 
-def process_datetime_interval():
+def process_datetime_interval(datetime_string: str):
     """
     interval-closed     = date-time "/" date-time
     interval-open-start = "../" date-time
     interval-open-end   = date-time "/.."
     interval            = interval-closed / interval-open-start / interval-open-end
     datetime            = date-time / interval
+
+    date-fullyear   = 4DIGIT
+    date-month      = 2DIGIT  ; 01-12
+    date-mday       = 2DIGIT  ; 01-28, 01-29, 01-30, 01-31 based onmonth/year
+    time-hour       = 2DIGIT  ; 00-23
+    time-minute     = 2DIGIT  ; 00-59
+    time-second     = 2DIGIT  ; 00-58, 00-59, 00-60 based on leap second
+                                ; rules
+    time-secfrac    = "." 1*DIGIT
+    time-numoffset  = ("+" / "-") time-hour ":" time-minute
+    time-offset     = "Z" / time-numoffset
+
+    partial-time    = time-hour ":" time-minute ":" time-second
+                        [time-secfrac]
+    full-date       = date-fullyear "-" date-month "-" date-mday
+    full-time       = partial-time time-offset
+
+    date-time       = full-date "T" full-time
     """
-    pass
+    start_date = None
+    end_date = None
+    dates_split = datetime_string.split("/") 
+    # for now only supports 2-item closed and open intervals
+    try:
+        if dates_split[0] == ".." or dates_split[0] == "..": #interval-open-start
+            start_date = None
+        else:
+            start_date = dt.datetime.fromisoformat(dates_split[0])
+
+        if dates_split[1] == ".." or dates_split[1] == "..":
+            end_date = None
+        else:
+            end_date = dt.datetime.fromisoformat(dates_split[1])
+    except Exception as ex:
+        print(ex)
+    
+    return start_date, end_date
 
 
 def map_columns(column_name):
