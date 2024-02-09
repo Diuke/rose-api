@@ -27,6 +27,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+DATA_UPLOAD_MAX_MEMORY_SIZE = 200 * 1000000 #200 MB
 
 # Application definition
 

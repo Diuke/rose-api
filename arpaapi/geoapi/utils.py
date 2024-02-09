@@ -37,13 +37,13 @@ def filter_datetime(items: BaseManager[any], start_date: dt.datetime, end_date: 
     items = filter_by_dict(items, filter_dict)
     return items
 
-def filter_bbox(items: BaseManager[any], bbox: list[str], base_model: any, ):
-    geom_field_name = base_model.get_geometry_filter_field()
+def filter_bbox(items: BaseManager[any], bbox: list[str], collection: geoapi_models.Collections):
+    geom_field_name = collection.geometry_filter_field
+    # if the model does not have a geometry filtering field, return all elements without filtering
+    if geom_field_name: return items
+
     bbox_polygon = Polygon.from_bbox(bbox)
-    print(bbox_polygon)
-    print(geom_field_name)
     filter_dict = {f'{geom_field_name}__within': bbox_polygon}
-    print(filter_dict)
     items = items.filter(**filter_dict)
     return items
 

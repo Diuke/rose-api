@@ -68,7 +68,8 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
         offset = int(request.GET.get('offset', 0))
 
         filtering_params = {}
-        for field in collection_model.get_filtering_fields():
+        filter_fields = collection.filter_fields.split(",")
+        for field in filter_fields:
             filtering_params[field] = request.GET.get(field, None)
             #validate boolean fields
             if filtering_params[field] == 'true': filtering_params[field] = True
@@ -80,7 +81,6 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
         # bbox filter
         if bbox is not None:
             bbox = bbox.split(",")
-            print(bbox)
             #validate bbox
             if not (isinstance(bbox, list) and len(bbox) == 4):
                 return responses.response_bad_request_400("malformed bbox parameter")
@@ -90,10 +90,10 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
                 print(ex)
                 return responses.response_bad_request_400("malformed bbox parameter")
             
-            items = utils.filter_bbox(items, bbox, collection_model)
+            items = utils.filter_bbox(items, bbox, collection)
 
         # datetime filter
-        datetime_field = collection_model.get_datetime_field()
+        datetime_field = collection.datetime_field
         if datetime_param is not None:
             # if the collection has a datetime field to filter
             if datetime_field is not None:
@@ -101,7 +101,8 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
                 items = utils.filter_datetime(items, start_date, end_date, datetime_field)
 
         # model fields filters
-        for field in collection_model.get_filtering_fields():
+        filter_fields = collection.filter_fields.split(",")
+        for field in filter_fields:
             if filtering_params[field] is not None:
                 items = utils.filter(items, field, filtering_params[field])
 
@@ -124,8 +125,8 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
         # format (f) parameter
         # Last part and return
         if f == 'geojson':
-            fields = collection_model.get_fields()
-            geometry_field = None if skip_geometry else collection_model.get_geometry_field()
+            fields = collection.display_fields.split(",")
+            geometry_field = None if skip_geometry else collection.geometry_field
             serializer = geoapi_serializers.EDRGeoJSONSerializer()
             options = {
                 "number_matched": full_count, 
@@ -138,7 +139,7 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
             return responses.return_geojson_200(items_serialized)
 
         elif f == 'json':
-            fields = collection_model.get_fields()
+            fields = collection.display_fields.split(",")
             serializer = geoapi_serializers.SimpleJsonSerializer()
             items_serialized = serializer.serialize(items, fields=fields)
             return responses.return_json_200(items_serialized)
@@ -159,14 +160,16 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
         location_id = request.GET.get('locationId', None)
         datetime_param = request.GET.get('datetime', None)
         parameter_name = request.GET.get('parameter-name', None)
-        skip_geometry = request.GET.get('skipGeometry', False)
+        skip_geometry = request.GET.get('skipGeometry', None)
+        if skip_geometry is not None:
+            skip_geometry = True if skip_geometry == "true" else False
         crs = request.GET.get('crs', None)
         limit = request.GET.get('limit', LIMIT_DEFAULT ) #100 elements by default
         offset = request.GET.get('offset', 0)
         f = request.GET.get('f', 'json')
 
         if location_id is None:
-            #TODO return a list of available locations - that is the list of sensors available
+            #TODO return a list of available locaions - that is the list of sensors available
             return responses.return_geojson_200([])
         
         else: 
@@ -189,8 +192,9 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
 
         # Format and response
         if f == 'geojson':
-            fields = collection_model.get_fields()
-            geometry_field = collection_model.get_geometry_field() if not skip_geometry else None
+            fields = collection.display_fields.split(",")
+            geometry_field = None if skip_geometry else collection.geometry_field
+            print(geometry_field)
             serializer = geoapi_serializers.EDRGeoJSONSerializer()
             options = {
                 "number_matched": full_count, 
@@ -203,7 +207,7 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
             return responses.return_geojson_200(items_serialized)
 
         elif f == 'json':
-            fields = collection_model.get_fields()
+            fields = collection.display_fields.split(",")
             serializer = geoapi_serializers.SimpleJsonSerializer()
             items_serialized = serializer.serialize(items, fields=fields)
             return responses.return_json_200(items_serialized)
