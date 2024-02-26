@@ -34,8 +34,8 @@ SUPPORTED_QUERIES = [
 
 def collection_query(request: HttpRequest, collectionId: str, query: str):
     model_name = collectionId
-    collection = geoapi_models.Collections.objects.get(model_name=model_name)
-    collection_model = apps.get_model('geoapi', model_name=model_name)
+    collection = geoapi_models.Collection.objects.get(model_name=model_name)
+    collection_model = geoapi_models.get_model(collection)
 
     if query == POSITION:
         return responses.response_bad_request_400("Position query not yet supported")  
@@ -70,10 +70,15 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
         filtering_params = {}
         filter_fields = collection.filter_fields.split(",")
         for field in filter_fields:
-            filtering_params[field] = request.GET.get(field, None)
-            #validate boolean fields
-            if filtering_params[field] == 'true': filtering_params[field] = True
-            if filtering_params[field] == 'false': filtering_params[field] = False
+            # Iterate the different filters that django supports
+            # This supports the usage of other operators as != (__ne), > (__gt), >= (__gte), < (__lt), <= (__lte)
+            django_filters = ["", "__lte", "__lt", "__gte", "__gt", "__ne"]
+            for d_filter in django_filters:
+                filter_name = (field + d_filter)
+                filtering_params[filter_name] = request.GET.get(filter_name, None)
+                #validate boolean fields
+                if filtering_params[filter_name] == 'true': filtering_params[filter_name] = True
+                if filtering_params[filter_name] == 'false': filtering_params[filter_name] = False
 
         f = request.GET.get('f', 'json')
 
@@ -101,8 +106,8 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
                 items = utils.filter_datetime(items, start_date, end_date, datetime_field)
 
         # model fields filters
-        filter_fields = collection.filter_fields.split(",")
-        for field in filter_fields:
+        # Iterate the filtering parameters already calculated before. This supports basic filtering operators
+        for field in filtering_params.keys():
             if filtering_params[field] is not None:
                 items = utils.filter(items, field, filtering_params[field])
 
@@ -114,7 +119,7 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
         
         # pagination
         if limit is None:
-            if collection.api_type == geoapi_models.Collections.API_Types.EDR:
+            if collection.api_type == geoapi_models.Collection.API_Types.EDR:
                 return responses.response_bad_request_400("Limit must be set!")
 
         items, retrieved_elements, full_count = utils.paginate(items, limit, offset)

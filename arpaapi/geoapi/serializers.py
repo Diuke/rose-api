@@ -5,13 +5,13 @@ from django.contrib.gis.geos.geometry import GEOSGeometry
 from django.core.serializers.json import Serializer as JsonBaseSerializer
 from django.contrib.gis.serializers.geojson import Serializer as GeoJSONBaseSerializer
 from django.contrib.gis.gdal import CoordTransform, SpatialReference
-from geoapi.models import Collections
+from geoapi.models import Collection
 from geoapi.schemas import common_schemas, EDR_schemas, features_schemas
 
 def build_collection_object(obj):
-    if obj.api_type == Collections.API_Types.EDR:
+    if obj.api_type == Collection.API_Types.EDR:
         collection_object = EDR_schemas.CollectionSchema(id=obj.model_name, title=obj.title, description=obj.description)
-    elif obj.api_type == Collections.API_Types.FEATURES: 
+    elif obj.api_type == Collection.API_Types.FEATURES: 
         collection_object = features_schemas.CollectionSchema(id=obj.model_name, title=obj.title, description=obj.description)
     else:
         return {}
@@ -72,11 +72,11 @@ class EDRGeoJSONSerializer(GeoJSONBaseSerializer):
         timestamp = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
         self.stream.write(
             '{"type": "FeatureCollection", '
-            '"crs": {"type": "name", "properties": {"name": "EPSG:%d"}},'
+            '"crs": {"type": "name", "properties": {"name": "http://www.opengis.net/def/crs/OGC/1.3/CRS84"}},'
             '"numberMatched": %d, "numberReturned": %d,'
             '"links": %s,'
             '"timestamp": "%s",'
-            ' "features": [' % (self.srid, self.number_matched, self.number_returned, links_str, timestamp)
+            ' "features": [' % (self.number_matched, self.number_returned, links_str, timestamp)
         )
 
     def get_dump_object(self, obj):
@@ -109,7 +109,15 @@ class EDRGeoJSONSerializer(GeoJSONBaseSerializer):
         else:
             # if it comes from a foreign key property
             if self.geometry_field:
-                geom = getattr(obj, self.geometry_field)
+                geom_field = str(self.geometry_field)
+                if '.' in geom_field:
+                    # get the related element
+                    geom_split = geom_field.split(".")
+                    related_parent = getattr(obj, geom_split[0])
+                    geom = getattr(related_parent, geom_split[1])
+                else: 
+                    geom = getattr(obj, geom_field)
+
                 if isinstance(geom, GEOSGeometry):
                     data["geometry"] = json.loads(geom.geojson)
                 else:

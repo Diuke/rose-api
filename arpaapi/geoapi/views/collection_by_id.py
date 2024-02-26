@@ -11,10 +11,10 @@ from geoapi import responses
 #GET for a single collection.
 #POST for adding data to a collection - both bulk and single.
 def collection_by_id(request: HttpRequest, collectionId: str):
+    model_name = collectionId
+    collection = geoapi_models.Collection.objects.filter(model_name=model_name)
 
     if request.method == "GET":
-        model_name = collectionId
-        collection = geoapi_models.Collections.objects.filter(model_name=model_name)
         if len(collection) > 1:
             return responses.response_bad_request_400("Duplicate collection id")
         serializer = geoapi_serializers.CollectionSerializer()
@@ -45,8 +45,7 @@ def collection_by_id(request: HttpRequest, collectionId: str):
             #single insert
             items = body.get("items")
             
-        model_name = collectionId
-        collection_model = apps.get_model('geoapi', model_name=model_name)
+        collection_model = geoapi_models.get_model(collection)
         try:
             new_items = collection_model.objects.bulk_create([collection_model(**item) for item in items ], ignore_conflicts=True)
         except Exception as ex:

@@ -1,9 +1,8 @@
 import datetime as dt
-from django.shortcuts import HttpResponse
+from django.db import models as django_models
 from django.contrib.gis.geos import Point, Polygon
 from django.db.models.manager import BaseManager
 from geoapi import models as geoapi_models
-from django.db.models import Q
 
 def filter_by_dict(items: BaseManager[any], query: dict):
     items = items.filter(**query)
@@ -37,10 +36,13 @@ def filter_datetime(items: BaseManager[any], start_date: dt.datetime, end_date: 
     items = filter_by_dict(items, filter_dict)
     return items
 
-def filter_bbox(items: BaseManager[any], bbox: list[str], collection: geoapi_models.Collections):
+def filter_bbox(items: BaseManager[any], bbox: list[str], collection: geoapi_models.Collection):
     geom_field_name = collection.geometry_filter_field
+    
     # if the model does not have a geometry filtering field, return all elements without filtering
-    if geom_field_name: return items
+    if geom_field_name is None: return items
+
+    if '.' in geom_field_name: geom_field_name = geom_field_name.replace(".", "__")
 
     bbox_polygon = Polygon.from_bbox(bbox)
     filter_dict = {f'{geom_field_name}__within': bbox_polygon}
@@ -152,4 +154,3 @@ example_item = {
     "longitude": 9.879209,
     "location": Point(x=9.879209, y=46.167852)
 }
-

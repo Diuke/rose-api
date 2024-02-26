@@ -10,7 +10,7 @@ from geoapi import models as geoapi_models
 from geoapi import serializers as geoapi_serializers
 
 def collections(request: HttpRequest):
-    collection_list = geoapi_models.Collections.objects.all()
+    collection_list = geoapi_models.Collection.objects.all()
     serializer = geoapi_serializers.CollectionsSerializer()
     serialized_collections = serializer.serialize(collection_list)
     
