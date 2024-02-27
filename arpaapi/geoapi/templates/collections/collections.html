@@ -1,0 +1,15 @@
+<ul>
+{% for collection in collections_response.collections %}
+    <li>
+        {{ collection.id }} - {{ collection.title }}
+    </li>
+{% endfor %}
+</ul>
+
+<ul>
+    {% for link in collections_response.links %}
+        <li>
+            <a href="{{ link.href }}">{{ link.href }}</a>
+        </li>
+    {% endfor %}
+</ul>

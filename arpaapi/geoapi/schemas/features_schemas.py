@@ -1,6 +1,6 @@
-from geoapi.schemas.common_schemas import ExtentSchema, LinkSchema
+from geoapi.schemas.common_schemas import ExtentSchema, LinkSchema, BaseSchema
 
-class CollectionSchema():
+class CollectionSchema(BaseSchema):
     def __init__(self,  
                  id:str, title:str="", description:str="", 
                  links:list[LinkSchema]=[],
@@ -9,6 +9,12 @@ class CollectionSchema():
                  output_formats:list[str]=["geojson,json"], 
                  crs:list[str]=["http://www.opengis.net/def/crs/OGC/1.3/CRS84"]
         ):
+        """
+        Constructor for the EDR Collection Schema.
+
+        Allows to build a Feature Collection object that can be represented as a python dict using the 
+        function to_object().
+        """
         self.links: list[LinkSchema] = links
         self.id: str = id
         self.title: str = title
@@ -31,14 +37,14 @@ class CollectionSchema():
         }    
         return obj
     
-class ItemSchema():
+class ItemSchema(BaseSchema):
     def __init__(self):
         pass
 
     def to_object(self):
         return {}
     
-class ItemsSchema():
+class ItemsSchema(BaseSchema):
     def __init__(self):
         pass
 

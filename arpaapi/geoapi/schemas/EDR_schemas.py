@@ -1,7 +1,7 @@
-from geoapi.schemas.common_schemas import ExtentSchema, LinkSchema
+from geoapi.schemas.common_schemas import ExtentSchema, LinkSchema, BaseSchema
 from geoapi.views import collection_query
 
-class DataQueriesSchema():
+class DataQueriesSchema(BaseSchema):
     def __init__(self):
         pass
 
@@ -12,11 +12,11 @@ class DataQueriesSchema():
             data_queries_object[supported] = {}
         return data_queries_object
     
-class ParameterNamesSchema():
+class ParameterNamesSchema(BaseSchema):
     def to_object(self):
         return {}
 
-class CollectionSchema():
+class CollectionSchema(BaseSchema):
     def __init__(self,  
                  id:str, title:str="", description:str="", 
                  keywords:list[str]=[], 
@@ -27,6 +27,12 @@ class CollectionSchema():
                  output_formats:list[str]=["json"], 
                  crs:list[str]=["http://www.opengis.net/def/crs/OGC/1.3/CRS84"]
         ):
+        """
+        Constructor for the Feature Collection Schema.
+
+        Allows to build a Feature Collection object that can be represented as a python dict using the 
+        function to_object().
+        """
         self.links: list[LinkSchema] = links
         self.id: str = id
         self.title: str = title

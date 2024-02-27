@@ -25,12 +25,26 @@ class CollectionSerializer(JsonBaseSerializer):
 
 # Serializer for a list of collections in JSON
 class CollectionsSerializer(JsonBaseSerializer):
+    """
+    Serializer for the list of collections endpoint. Retrieves all collections of the service and 
+    builds a collection object based on the type of service that the collection serves.
+
+    A collection can be EDR or Features. Both specific collection schemas are located into a separate schemas files,
+    respectively, EDR collection schema is located in EDR_schemas.py, while the Features schema is located in 
+    features_schemas.py.
+    """
+
+    def _init_options(self):
+        super()._init_options()
+        self.links = self.json_kwargs.pop("links", [])
+
     def start_serialization(self):
         self._init_options()
-        collections_base = common_schemas.CollectionsSchema().to_object()
+        collections_base = common_schemas.CollectionsSchema(links=self.links).to_object()
+        links_str = json.dumps(collections_base['links'])
         self.stream.write(
             '{"links": %s, '
-            ' "collections": [' % collections_base['links']
+            ' "collections": [' % links_str
         )
 
     def end_serialization(self):

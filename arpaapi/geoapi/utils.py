@@ -42,6 +42,8 @@ def filter_bbox(items: BaseManager[any], bbox: list[str], collection: geoapi_mod
     # if the model does not have a geometry filtering field, return all elements without filtering
     if geom_field_name is None: return items
 
+    # The convention to access fields from related models is with ".". Ths converts to "__", which is the way 
+    #   django access related fields in using filters.
     if '.' in geom_field_name: geom_field_name = geom_field_name.replace(".", "__")
 
     bbox_polygon = Polygon.from_bbox(bbox)
@@ -59,7 +61,7 @@ def process_datetime_interval(datetime_string: str):
 
     date-fullyear   = 4DIGIT
     date-month      = 2DIGIT  ; 01-12
-    date-mday       = 2DIGIT  ; 01-28, 01-29, 01-30, 01-31 based onmonth/year
+    date-mday       = 2DIGIT  ; 01-28, 01-29, 01-30, 01-31 based on month/year
     time-hour       = 2DIGIT  ; 00-23
     time-minute     = 2DIGIT  ; 00-59
     time-second     = 2DIGIT  ; 00-58, 00-59, 00-60 based on leap second
