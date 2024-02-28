@@ -28,7 +28,7 @@ def collection_by_id(request: HttpRequest, collectionId: str):
         
         if f == 'json':
             headers['Content-Type'] = 'application/json; charset=utf-8'
-            return responses.return_json_200(serialized_collection)
+            return responses.response_json_200(serialized_collection)
         else:
             response = "NOT SUPPORTED"
             return responses.response_bad_request_400(msg=response)
@@ -52,4 +52,4 @@ def collection_by_id(request: HttpRequest, collectionId: str):
             print(ex)
             return HttpResponse("Error", status=500)
         
-        return responses.return_json_200(new_items)
+        return responses.response_json_200(new_items)

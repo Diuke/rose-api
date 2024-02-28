@@ -5,6 +5,7 @@ from geoapi import utils
 from geoapi import models as geoapi_models
 from geoapi import responses
 from geoapi import serializers as geoapi_serializers
+from geoapi.schemas.common_schemas import LinkSchema
 
 """
 query parameters:
@@ -36,6 +37,7 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
     model_name = collectionId
     collection = geoapi_models.Collection.objects.get(model_name=model_name)
     collection_model = geoapi_models.get_model(collection)
+    base_url, path, query_params = utils.deconstruct_url(request)
 
     if query == POSITION:
         return responses.response_bad_request_400("Position query not yet supported")  
@@ -57,6 +59,10 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
     
     elif query == ITEMS: 
         items = collection_model.objects.all()
+        links = []
+        # Self link
+        self_link_href = f'{base_url}{path}?{query_params}'
+        links.append(LinkSchema(self_link_href, "self", type="link", title="This document"))
 
         # Query parameters
         bbox = request.GET.get('bbox', None)
@@ -124,15 +130,43 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
 
         items, retrieved_elements, full_count = utils.paginate(items, limit, offset)
 
-        # build links
-        links = []
+        # Create pagination links if the result has pages
+        if limit + offset <= full_count:
+            # next page link
+            next_limit = limit
+            next_offset = limit + offset
+            next_params = query_params
+            next_params = utils.replace_or_create_param(next_params, 'limit', str(next_limit))
+            next_params = utils.replace_or_create_param(next_params, 'offset', str(next_offset))
+            next_link_href = f'{base_url}{path}?{next_params}'
+            next_link = LinkSchema(next_link_href, 'next')
+            links.append(next_link)
+
+        if offset - limit >= 0:
+            # previous page link
+            prev_limit = limit
+            prev_offset = offset - limit
+            prev_params = query_params
+            prev_params = utils.replace_or_create_param(prev_params, 'limit', str(prev_limit))
+            prev_params = utils.replace_or_create_param(prev_params, 'offset', str(prev_offset))
+            prev_link_href = f'{base_url}{path}?{prev_params}'
+            prev_link = LinkSchema(prev_link_href, 'prev')
+            links.append(prev_link)
+
 
         # format (f) parameter
         # Last part and return
         if f == 'geojson':
             fields = collection.display_fields.split(",")
             geometry_field = None if skip_geometry else collection.geometry_field
-            serializer = geoapi_serializers.EDRGeoJSONSerializer()
+
+            # Select the serializer depending on the API type.
+            #   For EDR collections, use the EDR GeoJSON serializer, for normal Features
+            #   use the FeaturesGeoJSON serializer.
+            if collection.api_type == geoapi_models.Collection.API_Types.EDR:
+                serializer = geoapi_serializers.EDRGeoJSONSerializer()
+            else:
+                serializer = geoapi_serializers.FeaturesGeoJSONSerializer()
             options = {
                 "number_matched": full_count, 
                 "number_returned": retrieved_elements, 
@@ -141,21 +175,26 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
                 "fields": fields
             }
             items_serialized = serializer.serialize(items, **options)
-            return responses.return_geojson_200(items_serialized)
+            return responses.response_geojson_200(items_serialized)
 
         elif f == 'json':
             fields = collection.display_fields.split(",")
             serializer = geoapi_serializers.SimpleJsonSerializer()
             items_serialized = serializer.serialize(items, fields=fields)
-            return responses.return_json_200(items_serialized)
+            return responses.response_json_200(items_serialized)
 
         elif f == 'csv':
             #TODO Add support for CSV format
             return responses.response_bad_request_400("Format CSV not yet supported")
         
         elif f == 'html':
-            #TODO Add render for HTML format
-            return responses.response_bad_request_400("Format HTML not yet supported")
+            fields = collection.display_fields.split(",")
+            serializer = geoapi_serializers.SimpleJsonSerializer()
+            items_serialized = serializer.serialize(items, fields=fields)
+
+            if retrieved_elements > 100: 
+                return responses.response_bad_request_400("Request too large for HTML representation - Max 100 elements")
+            return responses.response_html_200(request, items_serialized, "collections/items.html")
         
         else:
             return responses.response_bad_request_400(f"Format {f} not yet supported")
@@ -175,7 +214,7 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
 
         if location_id is None:
             #TODO return a list of available locaions - that is the list of sensors available
-            return responses.return_geojson_200([])
+            return responses.response_geojson_200([])
         
         else: 
             items = collection_model.objects.all()
@@ -209,13 +248,13 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
                 "links": links
             }
             items_serialized = serializer.serialize(items, **options)
-            return responses.return_geojson_200(items_serialized)
+            return responses.response_geojson_200(items_serialized)
 
         elif f == 'json':
             fields = collection.display_fields.split(",")
             serializer = geoapi_serializers.SimpleJsonSerializer()
             items_serialized = serializer.serialize(items, fields=fields)
-            return responses.return_json_200(items_serialized)
+            return responses.response_json_200(items_serialized)
 
         elif f == 'csv':
             #TODO Add support for CSV format
@@ -233,3 +272,6 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
             
     else:
         return responses.response_bad_request_400("Query not supported")
+
+def create_pagination_links():
+    return []

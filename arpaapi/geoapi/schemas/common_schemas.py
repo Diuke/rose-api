@@ -19,7 +19,8 @@ class LinkSchema(BaseSchema):
     """
     Schema for a link, compliant with OGC API - Features 1.0 Core.
 
-    Consists of 
+    Schema available at: 
+    https://schemas.opengis.net/ogcapi/features/part1/1.0/openapi/schemas/link.yaml
     """
     def __init__(self, href:str, rel:str, type:str=None, hreflang:str=None, title:str=None, length:int=None, templated:str=None):
         """
@@ -44,6 +45,12 @@ class LinkSchema(BaseSchema):
         if self.templated is not None: obj['templated'] = self.templated
         return obj
     
+    def to_header_string(self):
+        """
+        Return a string compliant with HTTP header link parameter with the link information. 
+        """
+        return ''
+    
 #For now, a default schema for all extents
 class ExtentSchema(BaseSchema):
     def __init__(self, bbox=[-180,-90,180,90]):
@@ -65,6 +72,12 @@ class ExtentSchema(BaseSchema):
     
 class CollectionsSchema(BaseSchema):
     def __init__(self, links:list[LinkSchema]=[], collections:list[any]=[]):
+        """
+        Constructor for a Collections list object.
+
+        It contains a list of collections, which can be of FeatureCollection or EDRCollection types.
+        Also contains a list of links, which are of type LinkSchema.
+        """
         self.links: list[LinkSchema] = links
         self.collections: list[any] = collections
 

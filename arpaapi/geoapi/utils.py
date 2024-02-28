@@ -1,4 +1,6 @@
 import datetime as dt
+from django.http import HttpRequest
+from django.utils.encoding import iri_to_uri
 from django.db import models as django_models
 from django.contrib.gis.geos import Point, Polygon
 from django.db.models.manager import BaseManager
@@ -13,6 +15,11 @@ def filter(items: BaseManager[any], filter_field: str, filter_argument: any):
     return items
 
 def paginate(items: BaseManager[any], limit: int | None, offset: int):
+    """
+    Paginate a queryset based on a limit and offset provided as parameter.
+
+    Returns the truncated items list, the number of elements returned, and the total element count without pagination.
+    """
     # pagination
     number_matched = items.count()
     if number_matched < offset: offset = number_matched
@@ -156,3 +163,68 @@ example_item = {
     "longitude": 9.879209,
     "location": Point(x=9.879209, y=46.167852)
 }
+
+def deconstruct_url(request: HttpRequest):
+    protocol = request.scheme
+    host = request.get_host()
+    path_split = request.get_full_path().split('?')
+    path = path_split[0]
+    if len(path_split) > 1:
+        params = ''.join(path_split[1:])
+    else: params = ""
+    base_url = iri_to_uri(f'{protocol}://{host}')
+    return base_url, path, params 
+
+def replace_or_create_param(param_string: str, param: str, replacement: str):
+    """
+    Replace a query parameter value from a query parameters string. The param_string is a url query parameters
+    url separated by "&" and values associated with "=".
+    
+    If the parameter does not exist in the query string, it creates it.
+    """
+    new_param_string = ''
+    # Split the query parameters by & to have each parameter in one list element
+    split_params = param_string.split("&")
+    params_str_list = []
+    exists = False
+    for p in split_params:
+        # Nos split the parameter by "=" to have the name in [0] and the value in [1]
+        param_split = p.split("=")
+        # If the param to change is the param name
+        if param == param_split[0]:
+            exists = True
+            param_split[1] = replacement 
+
+        params_str_list.append(('='.join(param_split)))
+
+    new_param_string += ('&'.join(params_str_list))
+    
+    if not exists:
+        prefix = '&' if ('&' in new_param_string) else ''
+        new_param_string += f"{prefix}{param}={replacement}"
+
+    return new_param_string
+
+def replace_param(param_string: str, param: str, replacement: str):
+    """
+    Replace a query parameter value from a query parameters string. The param_string is a url query parameters
+    url separated by "&" and values associated with "=".
+    
+    If the parameter does not exist in the query string, it does not creates it.
+    """
+    new_param_string = ''
+    # Split the query parameters by & to have each parameter in one list element
+    split_params = param_string.split("&")
+    params_str_list = []
+    for p in split_params:
+        # Nos split the parameter by "=" to have the name in [0] and the value in [1]
+        param_split = p.split("=")
+        # If the param to change is the param name
+        if param == param_split[0]:
+            param_split[1] = replacement 
+
+        params_str_list.append(('='.join(param_split)))
+
+    new_param_string += ('&'.join(params_str_list))
+
+    return new_param_string

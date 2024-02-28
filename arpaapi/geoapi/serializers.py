@@ -36,7 +36,7 @@ class CollectionsSerializer(JsonBaseSerializer):
 
     def _init_options(self):
         super()._init_options()
-        self.links = self.json_kwargs.pop("links", [])
+        self.links: list[common_schemas.LinkSchema] = self.json_kwargs.pop("links", [])
 
     def start_serialization(self):
         self._init_options()
@@ -67,11 +67,17 @@ class SimpleJsonSerializer(JsonBaseSerializer):
     
 # GeoJSON Serializer for EDR responses. It modifies the Django GeoJSON serializer to accept foreign-key geometry attribute.
 class EDRGeoJSONSerializer(GeoJSONBaseSerializer):
+    """
+    Serializer for EDR GeoJSON responses.
+
+    Follows the schema for EDR GeoJSON feature collection available here: 
+    https://schemas.opengis.net/ogcapi/edr/1.1/openapi/schemas/edr-geojson/edrFeatureCollectionGeoJSON.yaml
+    """
     def _init_options(self):
         super()._init_options()
         self.number_matched = self.json_kwargs.pop("number_matched", 0)
         self.number_returned = self.json_kwargs.pop("number_returned", 0)
-        self.links = self.json_kwargs.pop("links", [])
+        self.links: list[common_schemas.LinkSchema] = self.json_kwargs.pop("links", [])
         if (
             self.selected_fields is not None
             and self.geometry_field is not None
@@ -82,7 +88,95 @@ class EDRGeoJSONSerializer(GeoJSONBaseSerializer):
     def start_serialization(self):
         self._init_options()
         self._cts = {}  # cache of CoordTransform's
-        links_str = json.dumps(self.links)
+        links_list = [ link.to_object() for link in self.links ]
+        links_str = json.dumps(links_list)
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
+        self.stream.write(
+            '{"type": "FeatureCollection", '
+            '"crs": {"type": "name", "properties": {"name": "http://www.opengis.net/def/crs/OGC/1.3/CRS84"}},'
+            '"numberMatched": %d, "numberReturned": %d,'
+            '"parameters": [],'
+            '"links": %s,'
+            '"timestamp": "%s",'
+            ' "features": [' % (self.number_matched, self.number_returned, links_str, timestamp)
+        )
+
+    def get_dump_object(self, obj):
+        data = {
+            "type": "Feature",
+            "id": obj.pk if self.id_field is None else getattr(obj, self.id_field),
+            "properties": self._current,
+        }
+
+        # Add any missing fields to the geojson
+        for f in self.selected_fields:
+            if f not in data["properties"] and f != self.geometry_field:
+                data["properties"][f] = getattr(obj, f)
+
+        if (
+            self.selected_fields is None or "pk" in self.selected_fields
+        ) and "pk" not in data["properties"]:
+            data["properties"]["pk"] = str(obj._meta.pk.value_to_string(obj))
+        if self._geometry:
+            if self._geometry.srid != self.srid:
+                # If needed, transform the geometry in the srid of the global
+                # geojson srid.
+                if self._geometry.srid not in self._cts:
+                    srs = SpatialReference(self.srid)
+                    self._cts[self._geometry.srid] = CoordTransform(
+                        self._geometry.srs, srs
+                    )
+                self._geometry.transform(self._cts[self._geometry.srid])
+            data["geometry"] = json.loads(self._geometry.geojson)
+        else:
+            # if it comes from a foreign key property
+            if self.geometry_field:
+                geom_field = str(self.geometry_field)
+                if '.' in geom_field:
+                    # get the related element
+                    geom_split = geom_field.split(".")
+                    related_parent = getattr(obj, geom_split[0])
+                    geom = getattr(related_parent, geom_split[1])
+                else: 
+                    geom = getattr(obj, geom_field)
+
+                if isinstance(geom, GEOSGeometry):
+                    data["geometry"] = json.loads(geom.geojson)
+                else:
+                    data["geometry"] = None
+
+            else:                
+                data["geometry"] = None
+
+        return data
+    
+
+
+# GeoJSON Serializer for EDR responses. It modifies the Django GeoJSON serializer to accept foreign-key geometry attribute.
+class FeaturesGeoJSONSerializer(GeoJSONBaseSerializer):
+    """
+    Serializer for Features GeoJSON responses.
+
+    Follows the schema for a normal GeoJSON feature collection available here: 
+    https://schemas.opengis.net/ogcapi/features/part1/1.0/openapi/schemas/featureCollectionGeoJSON.yaml
+    """
+    def _init_options(self):
+        super()._init_options()
+        self.number_matched = self.json_kwargs.pop("number_matched", 0)
+        self.number_returned = self.json_kwargs.pop("number_returned", 0)
+        self.links: list[common_schemas.LinkSchema] = self.json_kwargs.pop("links", [])
+        if (
+            self.selected_fields is not None
+            and self.geometry_field is not None
+            and self.geometry_field not in self.selected_fields
+        ):
+            self.selected_fields = [*self.selected_fields, self.geometry_field]
+        
+    def start_serialization(self):
+        self._init_options()
+        self._cts = {}  # cache of CoordTransform's
+        links_list = [ link.to_object() for link in self.links ]
+        links_str = json.dumps(links_list)
         timestamp = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
         self.stream.write(
             '{"type": "FeatureCollection", '
