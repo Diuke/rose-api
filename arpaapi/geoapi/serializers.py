@@ -35,6 +35,21 @@ class CollectionSerializer(JsonBaseSerializer):
         self.links: list[schemas.LinkSchema] = self.json_kwargs.pop("links", [])
         self.extent: schemas.ExtentSchema = self.json_kwargs.pop("extent", schemas.ExtentSchema())
 
+    def start_serialization(self):
+        """
+        Start the serialization with an empty string. This serializer should receive 1 element only, so
+        The response should be a single JSON element. This prevents the creation of a list of 
+        collections with a single element.
+        """
+        self._init_options()
+        self.stream.write("")
+
+    def end_serialization(self):
+        """
+        Finish the serialization with an empty string again.
+        """
+        self.stream.write("")
+
     def get_dump_object(self, obj):
         return build_collection_object(obj, links=self.links, extent=self.extent)
 

@@ -17,17 +17,22 @@ F_XML = 'xml'
 # F_MVT = 'mvt'
 # F_NETCDF = 'NetCDF'
 
+FORMAT_TYPES_REVERSE = {
+    'text/html': F_HTML,
+    'application/ld+json': F_JSONLD,
+    'application/json': F_JSON,
+    'application/geo+json': F_GEOJSON,
+    'text/xml': F_XML
+}
+
 #: Formats allowed for ?f= requests (order matters for complex MIME types)
-FORMAT_TYPES = OrderedDict((
-    (F_HTML, 'text/html'),
-    (F_JSONLD, 'application/ld+json'),
-    (F_JSON, 'application/json'),
-    (F_GEOJSON, 'application/geo+json'),
-    (F_XML, 'text/xml'),
-    # (F_PNG, 'image/png'),
-    # (F_MVT, 'application/vnd.mapbox-vector-tile'),
-    # (F_NETCDF, 'application/x-netcdf'),
-))
+FORMAT_TYPES = {
+    F_HTML: 'text/html',
+    F_JSONLD: 'application/ld+json',
+    F_JSON: 'application/json',
+    F_GEOJSON: 'application/geo+json',
+    F_XML: 'text/xml'
+}
 
 #: Locale used for system responses (e.g. exceptions)
 # SYSTEM_LOCALE = l10n.Locale('en', 'US')
@@ -238,16 +243,94 @@ def content_type_from_format(format: str):
         return F_JSON
     return FORMAT_TYPES[format]
 
-def get_format(request: HttpRequest):
+def get_format(request: HttpRequest, accepted_formats: list[str]):
+    """
+    This function is probably not very well done, but it works :D.
+
+    Get the desired format from the request and the accepted formats list provided. This uses a query parameter called "f" 
+    as the default query parameter for the format, and, if the format is not specified in the request parameters, it uses
+    HTTP content negotiation with the ACCEPT header.
+
+    This function first tries to get the format from the query parameter "f", independent if the format is allowed.
+
+    Then, it falls back to content negotiation using the HTTP header "ACCEPT".
+    The parameter specifies the MIME type, which is not corresponding to the format types that can be specified in the query.
+    A distinction is made in MIME types (e.g. 'text/html') and simple string type (e.g. 'html') 
+
+    To select a format type, the ACCEPT header is stripped off the spaces (strip()) and then splitted by ",". This gives an array
+    of each accepted MIME type with the respective quality ("q").
+
+    Then an array is created that stores the position in the list (position takes priority for same-quality types), the quality, 
+    and the MIME type format value.
+
+    This array is sorted by position (ascending) and then quality (descending). Finally, this priority array is iterated to select the 
+    format. A format is selected if it belongs to the MIME accepted formats specified as parameter to the function. When a format is
+    selected, the MIME type is converted to simple string and the loop exits so a lower-priority format is not selected.
+
+    Finally, the format (in simple string) is returned.
+    """
+    # Accepted formats in MIME types.
+    accepted_formats_types = list(map(lambda f: FORMAT_TYPES[f], accepted_formats))
+
     # Try to get format from the "f" query parameter
     format = request.GET.get('f', None)
 
     # If the format does not come from the query parameter, use Accept headers (content negotiation)
     if format is None:
-        pass
-    pass
+        accept_header: str | None = request.META.get("HTTP_ACCEPT", None)
+
+        if accept_header is not None: 
+            # resolve the format
+            # Example in chrome for ref: 
+            # text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8 
+            try:
+                accept_split = accept_header.strip().split(",")
+                accept_order = []
+
+                # Build the ACCEPT header list with position in the string and the quality ("q" parameter).
+                for index, value in enumerate(accept_split):
+                    accept_value_split = value.split(";")
+                    if len(accept_value_split) == 1: q = 1.0
+                    elif len(accept_value_split) == 2 and 'q' in accept_value_split[1]:
+                        q = float(accept_value_split[1].split("=")[1])
+                    else: q = 1.0
+
+                    accept_order.append({
+                        "position": index,
+                        "q": q,
+                        "value": accept_value_split[0] #convert from MIME to simple string
+                    })
+                
+                # Sort descending the format list by "q" and position.
+                accept_order = sorted(accept_order, key=lambda item: item['q'], reverse=True)
+
+                for accept_candidate in accept_order:
+                    # If an accepted format is found, take it and exit loop
+                    if accept_candidate['value'] in accepted_formats_types:
+                        format = FORMAT_TYPES_REVERSE[accept_candidate['value']]; break
+                    
+                    #wildcard format - take first in the list of accepted formats and exit loop.
+                    elif accept_candidate['value'] == "*/*": 
+                        format = accepted_formats[0]; break
+                            
+            except Exception as ex:
+                print(ex) 
+                # If any problem arises, return the preferred format...
+                return accepted_formats[0]
+
+    # Return the format
+    return format
 
 def deconstruct_url(request: HttpRequest):
+    """
+    Using the Django HttpRequest, deconstruct a returns the URL in 3 parts:
+
+    1- base_url: The base URL of the service. This is returned as "protocol://host"
+
+    2- path: The path of the url. This is the part with the "/".
+
+    3- params: The query parameters of the request. This is the part that comes after "?"
+    """
     protocol = request.scheme
     host = request.get_host()
     path_split = request.get_full_path().split('?')

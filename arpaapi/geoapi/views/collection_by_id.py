@@ -5,7 +5,7 @@ from django.http import HttpRequest
 from geoapi import models as geoapi_models
 from geoapi import serializers as geoapi_serializers
 from geoapi import utils
-from geoapi import responses
+from geoapi import responses as geoapi_responses
 from geoapi.schemas import schemas
 
 
@@ -18,7 +18,10 @@ def collection_by_id(request: HttpRequest, collectionId: str):
     base_url, path, query_params = utils.deconstruct_url(request)
 
     # Format of the response
-    f = request.GET.get('f', 'json')
+    accepted_formats = [
+        utils.F_JSON, utils.F_HTML
+    ]
+    f = utils.get_format(request=request, accepted_formats=accepted_formats)
 
     links = []
     # Self link
@@ -29,12 +32,13 @@ def collection_by_id(request: HttpRequest, collectionId: str):
 
     if request.method == "GET":
         if len(collection) > 1:
-            return responses.response_bad_request_400("Duplicate collection id")
+            return geoapi_responses.response_bad_request_400("Duplicate collection id")
         
         serializer = geoapi_serializers.CollectionSerializer()
         options = {
             "links": links
         }
+
         serialized_collection = serializer.serialize(collection, **options)
 
         # Response objects
@@ -42,12 +46,16 @@ def collection_by_id(request: HttpRequest, collectionId: str):
 
         # Query parameters
         
-        if f == 'json':
+        if f == utils.F_JSON:
             headers['Content-Type'] = 'application/json; charset=utf-8'
-            return responses.response_json_200(serialized_collection)
+            return geoapi_responses.response_json_200(serialized_collection)
+        
+        elif f == utils.F_HTML:
+            return geoapi_responses.response_html_200(request, serialized_collection, "collections/collection_by_id.html")
+    
         else:
             response = "NOT SUPPORTED"
-            return responses.response_bad_request_400(msg=response)
+            return geoapi_responses.response_bad_request_400(msg=response)
 
     elif request.method == "POST":
         body:dict = json.loads(request.body)

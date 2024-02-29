@@ -28,6 +28,7 @@ def response_html_200(request: HttpRequest, data_serialized: str, template: str)
     headers['Content-Type'] = 'text/html; charset=utf-8'
 
     data_obj = json.loads(data_serialized)
+    print(data_obj)
     context = {
         "data": data_obj 
     }

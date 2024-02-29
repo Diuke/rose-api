@@ -13,8 +13,14 @@ def collections(request: HttpRequest):
     This function contains all the logic behind the collections endpoint.
     """
     # TODO Add links to individual collections inside the collections list
-    # Query parameters
-    f = request.GET.get('f', 'json')
+
+    # The formats that the /collections endpoint accepts. Used for content negotiation.
+    accepted_formats = [
+        utils.F_JSON, utils.F_HTML
+    ]
+
+    # Get the format using the "f" parameter or content negotiation with ACCEPT header.
+    f = utils.get_format(request=request, accepted_formats=accepted_formats)
 
     collection_list = geoapi_models.Collection.objects.all()
 
@@ -48,12 +54,12 @@ def collections(request: HttpRequest):
     # Response objects
     headers = {}
     
-    if f == 'json':
+    if f == utils.F_JSON:
         #response = json.dumps(resp)
         headers['Content-Type'] = 'application/json; charset=utf-8'
         return geoapi_responses.response_json_200(items_serialized=serialized_collections)
 
-    elif f == 'html':
+    elif f == utils.F_HTML:
         return geoapi_responses.response_html_200(request, serialized_collections, "collections/collections.html")
     
     else:
