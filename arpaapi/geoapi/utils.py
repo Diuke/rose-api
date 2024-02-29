@@ -1,10 +1,11 @@
-from collections import OrderedDict
 import datetime as dt
+from django.conf import settings
 from django.http import HttpRequest
 from django.utils.encoding import iri_to_uri
 from django.contrib.gis.geos import Point, Polygon
 from django.db.models.manager import BaseManager
 from geoapi import models as geoapi_models
+from geoapi.schemas import schemas
 
 CHARSET = ['utf-8']
 F_JSON = 'json'
@@ -238,6 +239,9 @@ example_item = {
 }
 
 def content_type_from_format(format: str):
+    """
+    Convert a simple string format type to a MIME format type.
+    """
     if format not in FORMAT_TYPES:
         # If the format does not exist, return JSON
         return F_JSON
@@ -350,23 +354,25 @@ def replace_or_create_param(param_string: str, param: str, replacement: str):
     """
     new_param_string = ''
     # Split the query parameters by & to have each parameter in one list element
-    split_params = param_string.split("&")
-    params_str_list = []
     exists = False
-    for p in split_params:
-        # Nos split the parameter by "=" to have the name in [0] and the value in [1]
-        param_split = p.split("=")
-        # If the param to change is the param name
-        if param == param_split[0]:
-            exists = True
-            param_split[1] = replacement 
+    if param_string != "":
+        split_params = param_string.split("&")
+        params_str_list = []
+        for p in split_params:
+            # Now split the parameter by "=" to have the name in [0] and the value in [1]
+            param_split = p.split("=")
+            # If the param to change is the param name
+            if param == param_split[0]:
+                exists = True
+                param_split[1] = replacement 
 
-        params_str_list.append(('='.join(param_split)))
+            params_str_list.append(('='.join(param_split)))
+    else:
+        params_str_list = []
 
     new_param_string += ('&'.join(params_str_list))
-    
     if not exists:
-        prefix = '&' if ('&' in new_param_string) else ''
+        prefix = '&' if len(params_str_list) > 0 else ''
         new_param_string += f"{prefix}{param}={replacement}"
 
     return new_param_string
@@ -394,3 +400,23 @@ def replace_param(param_string: str, param: str, replacement: str):
     new_param_string += ('&'.join(params_str_list))
 
     return new_param_string
+
+def build_landing_links():
+    """
+    Return the links for the service landing page.
+    """
+    links = []
+
+    base_url = str(settings.BASE_API_URL)
+    landing_link_json = f'{base_url}?f=json'
+    links.append(
+        schemas.LinkSchema(href=landing_link_json, rel="root", type=content_type_from_format('json'), title="Landing page of this server as JSON.")
+    )
+
+    base_url = str(settings.BASE_API_URL)
+    landing_link_html = f'{base_url}?f=html'
+    links.append(
+        schemas.LinkSchema(href=landing_link_html, rel="root", type=content_type_from_format('html'), title="Landing page of this server as HTML.")
+    )
+
+    return links

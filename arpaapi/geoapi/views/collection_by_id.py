@@ -1,6 +1,7 @@
 import json
 from django.shortcuts import HttpResponse
 from django.http import HttpRequest
+from django.conf import settings
 
 from geoapi import models as geoapi_models
 from geoapi import serializers as geoapi_serializers
@@ -16,6 +17,7 @@ def collection_by_id(request: HttpRequest, collectionId: str):
     collection = geoapi_models.Collection.objects.filter(model_name=model_name)
 
     base_url, path, query_params = utils.deconstruct_url(request)
+    base_url:str = str(settings.BASE_API_URL)
 
     # Format of the response
     accepted_formats = [
@@ -33,6 +35,8 @@ def collection_by_id(request: HttpRequest, collectionId: str):
     if request.method == "GET":
         if len(collection) > 1:
             return geoapi_responses.response_bad_request_400("Duplicate collection id")
+        elif len(collection) == 0:
+            return geoapi_responses.response_not_found_404("Collection not found")
         
         serializer = geoapi_serializers.CollectionSerializer()
         options = {
@@ -68,12 +72,14 @@ def collection_by_id(request: HttpRequest, collectionId: str):
         else:
             #single insert
             items = body.get("items")
-            
+        
+        collection = collection.first()
         collection_model = geoapi_models.get_model(collection)
+
         try:
             new_items = collection_model.objects.bulk_create([collection_model(**item) for item in items ], ignore_conflicts=True)
         except Exception as ex:
             print(ex)
             return HttpResponse("Error", status=500)
         
-        return responses.response_json_200(new_items)
+        return geoapi_responses.response_json_200(new_items)

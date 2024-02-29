@@ -27,8 +27,11 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
     base_url, path, query_params = utils.deconstruct_url(request)
 
     # Format of the response
-    # TODO add also content negotiation with header...
-    f = request.GET.get('f', 'json')
+    # TODO accepted formats from the collection configuration!
+    accepted_formats = [
+        utils.F_JSON, utils.F_HTML, utils.F_GEOJSON
+    ]
+    f = utils.get_format(request=request, accepted_formats=accepted_formats)
 
     links = []
     # Self link
@@ -90,7 +93,6 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
             try:
                 bbox = [ float(el) for el in bbox ]
             except Exception as ex:
-                print(ex)
                 return responses.response_bad_request_400("malformed bbox parameter")
             
             items = utils.filter_bbox(items, bbox, collection)
@@ -234,7 +236,6 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
         if f == 'geojson':
             fields = collection.display_fields.split(",")
             geometry_field = None if skip_geometry else collection.geometry_field
-            print(geometry_field)
             serializer = geoapi_serializers.EDRGeoJSONSerializer()
             options = {
                 "number_matched": full_count, 

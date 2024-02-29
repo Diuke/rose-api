@@ -23,15 +23,16 @@ def response_json_200(items_serialized):
         status=200
     )
 
-def response_html_200(request: HttpRequest, data_serialized: str, template: str):
+def response_html_200(request: HttpRequest, data_serialized: str|None, template: str):
     headers = {}
     headers['Content-Type'] = 'text/html; charset=utf-8'
 
-    data_obj = json.loads(data_serialized)
-    print(data_obj)
-    context = {
-        "data": data_obj 
-    }
+    if data_serialized is not None:
+        data_obj = json.loads(data_serialized)
+        context = {
+            "data": data_obj 
+        }
+    else: context = {}
 
     response = render(request, template, context, status=200)
     

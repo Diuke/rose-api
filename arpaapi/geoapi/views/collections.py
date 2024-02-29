@@ -1,10 +1,13 @@
 from django.http import HttpRequest
+from django.conf import settings
+
 
 from geoapi import models as geoapi_models
 from geoapi import serializers as geoapi_serializers
 from geoapi import responses as geoapi_responses
 from geoapi.schemas import schemas
 from geoapi import utils
+from geoapi import urls
 
 def collections(request: HttpRequest):
     """
@@ -24,30 +27,36 @@ def collections(request: HttpRequest):
 
     collection_list = geoapi_models.Collection.objects.all()
 
+    base_api_url = geoapi_models.GeoAPIConfiguration.objects.first().base_url
     base_url, path, query_params = utils.deconstruct_url(request)
+    # base_url = base_api_url
+    base_url:str = str(settings.BASE_API_URL)
+
     # build links
     links = []
+    # Landing links
+    landing_links = utils.build_landing_links()
+    links += landing_links
 
-    self_link_href = f'{base_url}{path}?{query_params}'
+    # Self link
+    self_link_href = f'{base_url}collections/'
+    if query_params:
+        self_link_href += f'?{query_params}'
     links.append(
         schemas.LinkSchema(href=self_link_href, rel="self", type=utils.content_type_from_format(f), title="This document")
     )
 
-    html_link_href_params = utils.replace_or_create_param(query_params, 'f', 'html')
-    html_link_href = f'{base_url}{path}?{html_link_href_params}'
-    links.append(
-        schemas.LinkSchema(href=html_link_href, rel="alternate", type=utils.content_type_from_format(f), title="This document as HTML")
-    )
-
-    json_link_href_params = utils.replace_or_create_param(query_params, 'f', 'json')
-    json_link_href = f'{base_url}{path}?{json_link_href_params}'
-    links.append(
-        schemas.LinkSchema(href=json_link_href, rel="alternate", type=utils.content_type_from_format(f), title="This document as JSON")
-    )
+    # Alternate format links
+    for link_format in accepted_formats:
+        html_link_href_params = utils.replace_or_create_param(query_params, 'f', link_format)
+        html_link_href = f'{base_url}collections/?{html_link_href_params}'
+        links.append(
+            schemas.LinkSchema(href=html_link_href, rel="alternate", type=utils.content_type_from_format(f), title=f"This document as {link_format.upper()}.")
+        )
 
     serializer = geoapi_serializers.CollectionsSerializer()
     options = {
-        "links": links
+        "links": links.copy()
     }
     serialized_collections = serializer.serialize(collection_list, **options)
     

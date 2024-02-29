@@ -16,3 +16,4 @@ class CollectionAdmin(admin.ModelAdmin):
     form = CollectionForm
 
 admin.site.register(geoapi_models.Collection, CollectionAdmin)
+admin.site.register(geoapi_models.GeoAPIConfiguration)
