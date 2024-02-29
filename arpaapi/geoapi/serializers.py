@@ -6,13 +6,23 @@ from django.core.serializers.json import Serializer as JsonBaseSerializer
 from django.contrib.gis.serializers.geojson import Serializer as GeoJSONBaseSerializer
 from django.contrib.gis.gdal import CoordTransform, SpatialReference
 from geoapi.models import Collection
-from geoapi.schemas import common_schemas, EDR_schemas, features_schemas
+from geoapi.schemas import schemas
 
-def build_collection_object(obj):
+def build_collection_object(obj: Collection, links=[], extent=schemas.ExtentSchema()):
+    """
+    Dynamic function for building a collection object independent if it is an EDR or a Feature Collection.
+
+    Optional collection parameters, such as links, extent, etc, must be sent as parameters.
+    """
     if obj.api_type == Collection.API_Types.EDR:
-        collection_object = EDR_schemas.CollectionSchema(id=obj.model_name, title=obj.title, description=obj.description)
+        collection_object = schemas.EDRCollectionSchema(
+            id=obj.model_name, title=obj.title, description=obj.description, links=links, extent=extent
+        )
+
     elif obj.api_type == Collection.API_Types.FEATURES: 
-        collection_object = features_schemas.CollectionSchema(id=obj.model_name, title=obj.title, description=obj.description)
+        collection_object = schemas.FeaturesCollectionSchema(
+            id=obj.model_name, title=obj.title, description=obj.description, links=links, extent=extent
+        )
     else:
         return {}
     
@@ -20,8 +30,13 @@ def build_collection_object(obj):
 
 # Serializer for a single collection in JSON
 class CollectionSerializer(JsonBaseSerializer):
+    def _init_options(self):
+        super()._init_options()
+        self.links: list[schemas.LinkSchema] = self.json_kwargs.pop("links", [])
+        self.extent: schemas.ExtentSchema = self.json_kwargs.pop("extent", schemas.ExtentSchema())
+
     def get_dump_object(self, obj):
-        return build_collection_object(obj)
+        return build_collection_object(obj, links=self.links, extent=self.extent)
 
 # Serializer for a list of collections in JSON
 class CollectionsSerializer(JsonBaseSerializer):
@@ -36,11 +51,11 @@ class CollectionsSerializer(JsonBaseSerializer):
 
     def _init_options(self):
         super()._init_options()
-        self.links: list[common_schemas.LinkSchema] = self.json_kwargs.pop("links", [])
+        self.links: list[schemas.LinkSchema] = self.json_kwargs.pop("links", [])
 
     def start_serialization(self):
         self._init_options()
-        collections_base = common_schemas.CollectionsSchema(links=self.links).to_object()
+        collections_base = schemas.CollectionsSchema(links=self.links).to_object()
         links_str = json.dumps(collections_base['links'])
         self.stream.write(
             '{"links": %s, '
@@ -77,7 +92,7 @@ class EDRGeoJSONSerializer(GeoJSONBaseSerializer):
         super()._init_options()
         self.number_matched = self.json_kwargs.pop("number_matched", 0)
         self.number_returned = self.json_kwargs.pop("number_returned", 0)
-        self.links: list[common_schemas.LinkSchema] = self.json_kwargs.pop("links", [])
+        self.links: list[schemas.LinkSchema] = self.json_kwargs.pop("links", [])
         if (
             self.selected_fields is not None
             and self.geometry_field is not None
@@ -164,7 +179,7 @@ class FeaturesGeoJSONSerializer(GeoJSONBaseSerializer):
         super()._init_options()
         self.number_matched = self.json_kwargs.pop("number_matched", 0)
         self.number_returned = self.json_kwargs.pop("number_returned", 0)
-        self.links: list[common_schemas.LinkSchema] = self.json_kwargs.pop("links", [])
+        self.links: list[schemas.LinkSchema] = self.json_kwargs.pop("links", [])
         if (
             self.selected_fields is not None
             and self.geometry_field is not None

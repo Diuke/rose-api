@@ -1,11 +1,10 @@
-from django.apps import apps
 from django.http import HttpRequest
 
 from geoapi import utils
 from geoapi import models as geoapi_models
 from geoapi import responses
 from geoapi import serializers as geoapi_serializers
-from geoapi.schemas.common_schemas import LinkSchema
+from geoapi.schemas import schemas as geoapi_schemas
 
 """
 query parameters:
@@ -20,18 +19,6 @@ datetime = Datetime range for filtering by datetime. It can be a closed interval
 #GLOBAL CONSTANTS
 LIMIT_DEFAULT = 100
 MAX_ELEMENTS = 100000
-POSITION = "position"
-RADIUS = "radius"
-AREA = "area"
-CUBE = "cube"
-TRAJECTORY = "trajectory"
-CORRIDOR = "corridor"
-ITEMS = "items"
-LOCATIONS = "locations"
-INSTANCES = "instances"
-SUPPORTED_QUERIES = [
-    ITEMS, LOCATIONS
-]
 
 def collection_query(request: HttpRequest, collectionId: str, query: str):
     model_name = collectionId
@@ -39,30 +26,37 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
     collection_model = geoapi_models.get_model(collection)
     base_url, path, query_params = utils.deconstruct_url(request)
 
-    if query == POSITION:
+    # Format of the response
+    # TODO add also content negotiation with header...
+    f = request.GET.get('f', 'json')
+
+    links = []
+    # Self link
+    self_link_href = f'{base_url}{path}?{query_params}'
+    links.append(
+        geoapi_schemas.LinkSchema(href=self_link_href, rel="self", type=utils.content_type_from_format(f), title="This document")
+    )
+
+    if query == geoapi_schemas.POSITION:
         return responses.response_bad_request_400("Position query not yet supported")  
     
-    elif query == RADIUS:   
+    elif query == geoapi_schemas.RADIUS:   
         return responses.response_bad_request_400("Radius query not yet supported")
 
-    elif query == AREA: 
+    elif query == geoapi_schemas.AREA: 
         return responses.response_bad_request_400("Area query not yet supported")
     
-    elif query == CUBE: 
+    elif query == geoapi_schemas.CUBE: 
         return responses.response_bad_request_400("Cube query not yet supported")
     
-    elif query == TRAJECTORY: 
+    elif query == geoapi_schemas.TRAJECTORY: 
         return responses.response_bad_request_400("Trajectory query not yet supported")
     
-    elif query == CORRIDOR: 
+    elif query == geoapi_schemas.CORRIDOR: 
         return responses.response_bad_request_400("Corridor query not yet supported")
     
-    elif query == ITEMS: 
+    elif query == geoapi_schemas.ITEMS: 
         items = collection_model.objects.all()
-        links = []
-        # Self link
-        self_link_href = f'{base_url}{path}?{query_params}'
-        links.append(LinkSchema(self_link_href, "self", type="link", title="This document"))
 
         # Query parameters
         bbox = request.GET.get('bbox', None)
@@ -85,8 +79,6 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
                 #validate boolean fields
                 if filtering_params[filter_name] == 'true': filtering_params[filter_name] = True
                 if filtering_params[filter_name] == 'false': filtering_params[filter_name] = False
-
-        f = request.GET.get('f', 'json')
 
         #filters
         # bbox filter
@@ -139,7 +131,9 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
             next_params = utils.replace_or_create_param(next_params, 'limit', str(next_limit))
             next_params = utils.replace_or_create_param(next_params, 'offset', str(next_offset))
             next_link_href = f'{base_url}{path}?{next_params}'
-            next_link = LinkSchema(next_link_href, 'next')
+            next_link = geoapi_schemas.LinkSchema(
+                href=next_link_href, rel='next', type=utils.content_type_from_format(f), title="Next page"
+            )
             links.append(next_link)
 
         if offset - limit >= 0:
@@ -150,7 +144,9 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
             prev_params = utils.replace_or_create_param(prev_params, 'limit', str(prev_limit))
             prev_params = utils.replace_or_create_param(prev_params, 'offset', str(prev_offset))
             prev_link_href = f'{base_url}{path}?{prev_params}'
-            prev_link = LinkSchema(prev_link_href, 'prev')
+            prev_link = geoapi_schemas.LinkSchema(
+                href=prev_link_href, rel='prev', type=utils.content_type_from_format(f), title="Previous page"
+            )
             links.append(prev_link)
 
 
@@ -199,7 +195,7 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
         else:
             return responses.response_bad_request_400(f"Format {f} not yet supported")
 
-    elif query == LOCATIONS: 
+    elif query == geoapi_schemas.LOCATIONS: 
         # Query parameters
         location_id = request.GET.get('locationId', None)
         datetime_param = request.GET.get('datetime', None)
@@ -267,7 +263,7 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
         else:
             return responses.response_bad_request_400(f"Format {f} not yet supported")
 
-    elif query == INSTANCES: 
+    elif query == geoapi_schemas.INSTANCES: 
         return responses.response_bad_request_400("Instances query not yet supported")
             
     else:

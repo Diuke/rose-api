@@ -1,10 +1,78 @@
+from collections import OrderedDict
 import datetime as dt
 from django.http import HttpRequest
 from django.utils.encoding import iri_to_uri
-from django.db import models as django_models
 from django.contrib.gis.geos import Point, Polygon
 from django.db.models.manager import BaseManager
 from geoapi import models as geoapi_models
+
+CHARSET = ['utf-8']
+F_JSON = 'json'
+F_GEOJSON = 'geojson'
+F_HTML = 'html'
+F_JSONLD = 'jsonld'
+F_XML = 'xml'
+# F_GZIP = 'gzip'
+# F_PNG = 'png'
+# F_MVT = 'mvt'
+# F_NETCDF = 'NetCDF'
+
+#: Formats allowed for ?f= requests (order matters for complex MIME types)
+FORMAT_TYPES = OrderedDict((
+    (F_HTML, 'text/html'),
+    (F_JSONLD, 'application/ld+json'),
+    (F_JSON, 'application/json'),
+    (F_GEOJSON, 'application/geo+json'),
+    (F_XML, 'text/xml'),
+    # (F_PNG, 'image/png'),
+    # (F_MVT, 'application/vnd.mapbox-vector-tile'),
+    # (F_NETCDF, 'application/x-netcdf'),
+))
+
+#: Locale used for system responses (e.g. exceptions)
+# SYSTEM_LOCALE = l10n.Locale('en', 'US')
+
+CONFORMANCE = {
+    'common': [
+        'http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/core',
+        'http://www.opengis.net/spec/ogcapi-common-2/1.0/conf/collections',
+        'http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/landing-page',
+        'http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/json',
+        'http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/html',
+        'http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/oas30'
+    ],
+    'feature': [
+        'http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core',
+        'http://www.opengis.net/spec/ogcapi-features-1/1.0/req/oas30',
+        'http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/html',
+        'http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson',
+        'http://www.opengis.net/spec/ogcapi-features-2/1.0/conf/crs',
+        'http://www.opengis.net/spec/ogcapi-features-3/1.0/conf/queryables',
+        'http://www.opengis.net/spec/ogcapi-features-3/1.0/conf/queryables-query-parameters',  # noqa
+        'http://www.opengis.net/spec/ogcapi-features-4/1.0/conf/create-replace-delete',  # noqa
+        'http://www.opengis.net/spec/ogcapi-features-5/1.0/conf/schemas',
+        'http://www.opengis.net/spec/ogcapi-features-5/1.0/req/core-roles-features' # noqa
+    ],
+    'process': [
+        'http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/ogc-process-description', # noqa
+        'http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/core',
+        'http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/json',
+        'http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/oas30'
+    ],
+    'edr': [
+        'http://www.opengis.net/spec/ogcapi-edr-1/1.0/conf/core'
+    ]
+}
+
+OGC_RELTYPES_BASE = 'http://www.opengis.net/def/rel/ogc/1.0'
+
+DEFAULT_CRS_LIST = [
+    'http://www.opengis.net/def/crs/OGC/1.3/CRS84',
+    'http://www.opengis.net/def/crs/OGC/1.3/CRS84h',
+]
+
+DEFAULT_CRS = 'http://www.opengis.net/def/crs/OGC/1.3/CRS84'
+DEFAULT_STORAGE_CRS = DEFAULT_CRS
 
 def filter_by_dict(items: BaseManager[any], query: dict):
     items = items.filter(**query)
@@ -163,6 +231,21 @@ example_item = {
     "longitude": 9.879209,
     "location": Point(x=9.879209, y=46.167852)
 }
+
+def content_type_from_format(format: str):
+    if format not in FORMAT_TYPES:
+        # If the format does not exist, return JSON
+        return F_JSON
+    return FORMAT_TYPES[format]
+
+def get_format(request: HttpRequest):
+    # Try to get format from the "f" query parameter
+    format = request.GET.get('f', None)
+
+    # If the format does not come from the query parameter, use Accept headers (content negotiation)
+    if format is None:
+        pass
+    pass
 
 def deconstruct_url(request: HttpRequest):
     protocol = request.scheme

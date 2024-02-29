@@ -1,15 +1,9 @@
-import json
-import datetime
-from django.shortcuts import HttpResponse
-from django.apps import apps
 from django.http import HttpRequest
-from django.shortcuts import render
-
 
 from geoapi import models as geoapi_models
 from geoapi import serializers as geoapi_serializers
 from geoapi import responses as geoapi_responses
-from geoapi.schemas import common_schemas
+from geoapi.schemas import schemas
 from geoapi import utils
 
 def collections(request: HttpRequest):
@@ -18,23 +12,32 @@ def collections(request: HttpRequest):
 
     This function contains all the logic behind the collections endpoint.
     """
+    # TODO Add links to individual collections inside the collections list
+    # Query parameters
+    f = request.GET.get('f', 'json')
+
     collection_list = geoapi_models.Collection.objects.all()
 
     base_url, path, query_params = utils.deconstruct_url(request)
     # build links
     links = []
 
-    # TODO fix links for this to actually work...
     self_link_href = f'{base_url}{path}?{query_params}'
-    links.append(common_schemas.LinkSchema(self_link_href, "self", type="link", title="This document"))
+    links.append(
+        schemas.LinkSchema(href=self_link_href, rel="self", type=utils.content_type_from_format(f), title="This document")
+    )
 
     html_link_href_params = utils.replace_or_create_param(query_params, 'f', 'html')
     html_link_href = f'{base_url}{path}?{html_link_href_params}'
-    links.append(common_schemas.LinkSchema(html_link_href, "self", type="link", title="This document as HTML"))
+    links.append(
+        schemas.LinkSchema(href=html_link_href, rel="alternate", type=utils.content_type_from_format(f), title="This document as HTML")
+    )
 
     json_link_href_params = utils.replace_or_create_param(query_params, 'f', 'json')
     json_link_href = f'{base_url}{path}?{json_link_href_params}'
-    links.append(common_schemas.LinkSchema(json_link_href, "self", type="link", title="This document as JSON"))
+    links.append(
+        schemas.LinkSchema(href=json_link_href, rel="alternate", type=utils.content_type_from_format(f), title="This document as JSON")
+    )
 
     serializer = geoapi_serializers.CollectionsSerializer()
     options = {
@@ -44,9 +47,6 @@ def collections(request: HttpRequest):
     
     # Response objects
     headers = {}
-
-    # Query parameters
-    f = request.GET.get('f', 'json')
     
     if f == 'json':
         #response = json.dumps(resp)

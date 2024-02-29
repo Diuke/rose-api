@@ -10,6 +10,9 @@ from django.db.models.signals import post_save, pre_save, post_delete, pre_delet
 from django.dispatch import receiver
 from django.db import connection
 
+class GeoAPIConfiguration(models.Model):
+    base_url = models.CharField(_("Base GeoAPI URL"), max_length=400)
+
 class Collection(models.Model):
     """
     Collection model. 
