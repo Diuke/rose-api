@@ -27,18 +27,34 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
     base_url, path, query_params = utils.deconstruct_url(request)
 
     # Format of the response
-    # TODO accepted formats from the collection configuration!
+    # Default format is GeoJSON
     accepted_formats = [
-        utils.F_JSON, utils.F_HTML, utils.F_GEOJSON
+        utils.F_GEOJSON, utils.F_HTML, utils.F_JSON
     ]
     f = utils.get_format(request=request, accepted_formats=accepted_formats)
 
     links = []
     # Self link
-    self_link_href = f'{base_url}{path}?{query_params}'
+    self_link_href = f'{base_url}collections/{collection.model_name}/items'
+    if query_params:
+        self_link_href += f'?{query_params}'
     links.append(
         geoapi_schemas.LinkSchema(href=self_link_href, rel="self", type=utils.content_type_from_format(f), title="This document")
     )
+
+    # Parent collection link
+    parent_collection_link = f'{base_url}collections/{collection.model_name}'
+    links.append(
+        geoapi_schemas.LinkSchema(href=parent_collection_link, rel="collection", type=utils.content_type_from_format(f), title=f"{collection.description}")
+    )
+
+    # alternate format links
+    for link_format in accepted_formats:
+        html_link_href_params = utils.replace_or_create_param(query_params, 'f', link_format)
+        html_link_href = f'{base_url}collections/{collection.model_name}/items/?{html_link_href_params}'
+        links.append(
+            geoapi_schemas.LinkSchema(href=html_link_href, rel="alternate", type=utils.content_type_from_format(link_format), title=f"Items as {link_format.upper()}.")
+        )
 
     if query == geoapi_schemas.POSITION:
         return responses.response_bad_request_400("Position query not yet supported")  
@@ -62,6 +78,19 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
         items = collection_model.objects.all()
 
         # Query parameters
+        # Common accepted parameters of this request
+        accepted_parameters = [
+            'bbox', 'datetime', 'skipGeometry', 'limit', 'offset', 'f'
+        ]
+        # Collection-specific accepted query parameters:
+        collection.filter_fields
+        accepted_parameters += [ field for field in collection.filter_fields.split(',') ]
+
+        # Return 400 if there is an "unknown" parameter in the request
+        for key, value in request.GET.items():
+            if key not in accepted_parameters:
+                return responses.response_bad_request_400(f"Unknown Parameter: {key}")
+
         bbox = request.GET.get('bbox', None)
         datetime_param = request.GET.get('datetime', None)
         skip_geometry = request.GET.get('skipGeometry', None)
@@ -98,7 +127,7 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
         if bbox is not None:
             bbox = bbox.split(",")
             #validate bbox
-            if not (isinstance(bbox, list) and len(bbox) == 4):
+            if not (isinstance(bbox, list) and (len(bbox) == 4 or len(bbox) == 6)):
                 return responses.response_bad_request_400("malformed bbox parameter")
             try:
                 bbox = [ float(el) for el in bbox ]
@@ -126,6 +155,8 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
         if limit > MAX_ELEMENTS and items_count > MAX_ELEMENTS:
             print("too many elements")
             return responses.response_bad_request_400("Too many elements")
+        if limit == -1: # Max number
+            limit = MAX_ELEMENTS
         
         # pagination
         if limit is None:
@@ -185,17 +216,17 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
             items_serialized = serializer.serialize(items, **options)
             return responses.response_geojson_200(items_serialized)
 
-        elif f == 'json':
+        elif f == utils.F_JSON:
             fields = collection.display_fields.split(",")
             serializer = geoapi_serializers.SimpleJsonSerializer()
             items_serialized = serializer.serialize(items, fields=fields)
             return responses.response_json_200(items_serialized)
 
-        elif f == 'csv':
+        elif f == utils.F_CSV:
             #TODO Add support for CSV format
             return responses.response_bad_request_400("Format CSV not yet supported")
         
-        elif f == 'html':
+        elif f == utils.F_HTML:
             fields = collection.display_fields.split(",")
             serializer = geoapi_serializers.SimpleJsonSerializer()
             items_serialized = serializer.serialize(items, fields=fields)

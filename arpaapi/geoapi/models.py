@@ -47,7 +47,7 @@ class Collection(models.Model):
     """
 
     display_fields = models.TextField(default="")
-    filter_fields = models.TextField(default="")
+    filter_fields = models.TextField(default="") # Field names of the fields that can be queried in the /items request. Comma separated.
     geometry_field = models.TextField(default=None, null=True, blank=True)
     datetime_field = models.TextField(default=None, null=True, blank=True)
     geometry_filter_field = models.TextField(default=None, null=True, blank=True)

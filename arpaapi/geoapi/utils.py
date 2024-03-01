@@ -14,6 +14,7 @@ F_HTML = 'html'
 F_JSONLD = 'jsonld'
 F_XML = 'xml'
 F_OPENAPI = 'application/vnd.oai.openapi+json'
+F_CSV = 'csv'
 # F_GZIP = 'gzip'
 # F_PNG = 'png'
 # F_MVT = 'mvt'
@@ -25,7 +26,8 @@ FORMAT_TYPES_REVERSE = {
     'application/json': F_JSON,
     'application/geo+json': F_GEOJSON,
     'text/xml': F_XML,
-    'application/vnd.oai.openapi+json': F_OPENAPI
+    'application/vnd.oai.openapi+json': F_OPENAPI,
+    'text/csv': F_CSV
 }
 
 #: Formats allowed for ?f= requests (order matters for complex MIME types)
@@ -35,7 +37,8 @@ FORMAT_TYPES = {
     F_JSON: 'application/json',
     F_GEOJSON: 'application/geo+json',
     F_XML: 'text/xml',
-    F_OPENAPI: 'application/vnd.oai.openapi+json'
+    F_OPENAPI: 'application/vnd.oai.openapi+json',
+    F_CSV: 'text/csv'
 }
 
 #: Locale used for system responses (e.g. exceptions)
@@ -145,6 +148,10 @@ def filter_bbox(items: BaseManager[any], bbox: list[str], collection: geoapi_mod
     # The convention to access fields from related models is with ".". Ths converts to "__", which is the way 
     #   django access related fields in using filters.
     if '.' in geom_field_name: geom_field_name = geom_field_name.replace(".", "__")
+
+    # Only 2D bbox (4 elements) - Even if the API accepts 3D bboxes
+    if len(bbox) > 4:
+        bbox = bbox[0:4]
 
     bbox_polygon = Polygon.from_bbox(bbox)
     filter_dict = {f'{geom_field_name}__within': bbox_polygon}

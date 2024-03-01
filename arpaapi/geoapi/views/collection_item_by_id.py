@@ -8,7 +8,7 @@ from django.core import serializers
 from geoapi import models as geoapi_models
 
 def collection_item_by_id(request: HttpRequest, collectionId: str, featureId: int):
-    collection = geoapi_models.Collection.objects.get(pk=collectionId)
+    collection = geoapi_models.Collection.objects.get(model_name=collectionId)
     collection_model = geoapi_models.get_model(collection)
     feature_id = featureId
     feature = collection_model.objects.filter(pk=feature_id)
