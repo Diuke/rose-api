@@ -67,8 +67,18 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
         skip_geometry = request.GET.get('skipGeometry', None)
         if skip_geometry is not None:
             skip_geometry = True if skip_geometry == "true" else False
-        limit = int(request.GET.get('limit', LIMIT_DEFAULT)) #100 elements by default
-        offset = int(request.GET.get('offset', 0))
+
+        # Limit parameter, if not an integer, return error
+        try:
+            limit = int(request.GET.get('limit', LIMIT_DEFAULT)) #100 elements by default
+        except:
+            return responses.response_bad_request_400("Error in limit parameter")
+        
+        # Offset parameter, if not an integer, return error
+        try:
+            offset = int(request.GET.get('offset', 0))
+        except:
+            return responses.response_bad_request_400("Error in offset parameter")
 
         filtering_params = {}
         filter_fields = collection.filter_fields.split(",")

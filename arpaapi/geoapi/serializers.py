@@ -59,7 +59,6 @@ class CollectionSerializer(JsonBaseSerializer):
 
     def get_dump_object(self, obj):
         obj_links = self.links.copy()
-        print(obj_links)
         return build_collection_object(obj, links=obj_links, extent=self.extent)
 
 # Serializer for a list of collections in JSON
@@ -94,11 +93,11 @@ class CollectionsSerializer(JsonBaseSerializer):
         # TODO Build the links for each collection here...
         base_url:str = str(settings.BASE_API_URL)
         obj_links = []
-        print(obj)
+
         # Items links
         items_format_list = ['geojson','json','html']
         for items_format in items_format_list:
-            items_link = f'{base_url}collections/{obj.model_name}/items/?f={items_format}'
+            items_link = f'{base_url}collections/{obj.model_name}/items?f={items_format}'
             obj_links.append(
                 schemas.LinkSchema(href=items_link, rel="items", type=utils.content_type_from_format(items_format), title=f"Items as {items_format.upper()}")
             )

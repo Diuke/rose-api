@@ -44,6 +44,20 @@ class LinkSchema(BaseModel):
         """
         return ''
     
+class LandingSchema(BaseModel):
+    """
+    Schema of the landing page in JSON
+    """
+    title: str = ""
+    description: str = ""
+    links: list[LinkSchema] = []
+
+    def to_object(self):
+        return {
+            "title": self.title,
+            "description": self.description,
+            "links": [l.to_object() for l in self.links]
+        }
 
 # Spatial Schemas
 class ExtentSchema(BaseModel):

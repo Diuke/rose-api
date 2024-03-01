@@ -51,7 +51,7 @@ def collections(request: HttpRequest):
         html_link_href_params = utils.replace_or_create_param(query_params, 'f', link_format)
         html_link_href = f'{base_url}collections/?{html_link_href_params}'
         links.append(
-            schemas.LinkSchema(href=html_link_href, rel="alternate", type=utils.content_type_from_format(f), title=f"This document as {link_format.upper()}.")
+            schemas.LinkSchema(href=html_link_href, rel="alternate", type=utils.content_type_from_format(link_format), title=f"This document as {link_format.upper()}.")
         )
 
     serializer = geoapi_serializers.CollectionsSerializer()

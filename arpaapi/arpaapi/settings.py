@@ -20,7 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-zjz6=$oi=f@v+19#*fffg++)@t&icn6^q!nss9z&!+))b#9!m$'
+SECRET_KEY = '^a$1hag-+oer0tfn!ir*s71r$0320n*-cdziqj#g+5dnypg@k'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -32,7 +32,8 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 200 * 1000000 #200 MB
 # ARPA API specific django parameters
 # Database maximum lenght of table name
 MAX_TABLE_NAME_LENGTH = 30
-BASE_API_URL = 'http://localhost:8000/api/' # For linkbuilding - use trailing slash
+# BASE_API_URL = 'http://localhost:8000/api/' # For linkbuilding - use trailing slash
+BASE_API_URL = 'http://192.168.1.169:8000/api/' # For linkbuilding - use trailing slash
 
 # Application definition
 
@@ -44,8 +45,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.gis',
-
-    'rest_framework',
+    'corsheaders',
 
     'geoapi'
 ]
@@ -54,6 +54,7 @@ MIDDLEWARE = [
     'django.middleware.gzip.GZipMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -135,3 +136,7 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# CORS Configuration
+CORS_ALLOW_ALL_ORIGINS = True
+ALLOWED_HOSTS = ["*"]

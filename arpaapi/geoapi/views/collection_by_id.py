@@ -16,27 +16,30 @@ def collection_by_id(request: HttpRequest, collectionId: str):
     model_name = collectionId
     collection = geoapi_models.Collection.objects.filter(model_name=model_name)
 
-    base_url, path, query_params = utils.deconstruct_url(request)
-    base_url:str = str(settings.BASE_API_URL)
-
-    # Format of the response
-    accepted_formats = [
-        utils.F_JSON, utils.F_HTML
-    ]
-    f = utils.get_format(request=request, accepted_formats=accepted_formats)
-
-    links = []
-    # Self link
-    self_link_href = f'{base_url}{path}?{query_params}'
-    links.append(
-        schemas.LinkSchema(href=self_link_href, rel="self", type=utils.content_type_from_format(f), title="This document")
-    )
-
     if request.method == "GET":
         if len(collection) > 1:
             return geoapi_responses.response_bad_request_400("Duplicate collection id")
         elif len(collection) == 0:
             return geoapi_responses.response_not_found_404("Collection not found")
+        
+        collection_model_name = collection.first().model_name
+        base_url, path, query_params = utils.deconstruct_url(request)
+        base_url:str = str(settings.BASE_API_URL)
+
+        # Format of the response
+        accepted_formats = [
+            utils.F_JSON, utils.F_HTML
+        ]
+        f = utils.get_format(request=request, accepted_formats=accepted_formats)
+
+        links = []
+        # Self link
+        self_link_href = f'{base_url}collections/{collection_model_name}'
+        if query_params:
+            self_link_href += f'?{query_params}'
+        links.append(
+            schemas.LinkSchema(href=self_link_href, rel="self", type=utils.content_type_from_format(f), title="This document")
+        )
         
         serializer = geoapi_serializers.CollectionSerializer()
         options = {

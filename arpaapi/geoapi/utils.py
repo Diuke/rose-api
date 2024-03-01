@@ -13,6 +13,7 @@ F_GEOJSON = 'geojson'
 F_HTML = 'html'
 F_JSONLD = 'jsonld'
 F_XML = 'xml'
+F_OPENAPI = 'application/vnd.oai.openapi+json'
 # F_GZIP = 'gzip'
 # F_PNG = 'png'
 # F_MVT = 'mvt'
@@ -23,7 +24,8 @@ FORMAT_TYPES_REVERSE = {
     'application/ld+json': F_JSONLD,
     'application/json': F_JSON,
     'application/geo+json': F_GEOJSON,
-    'text/xml': F_XML
+    'text/xml': F_XML,
+    'application/vnd.oai.openapi+json': F_OPENAPI
 }
 
 #: Formats allowed for ?f= requests (order matters for complex MIME types)
@@ -32,43 +34,60 @@ FORMAT_TYPES = {
     F_JSONLD: 'application/ld+json',
     F_JSON: 'application/json',
     F_GEOJSON: 'application/geo+json',
-    F_XML: 'text/xml'
+    F_XML: 'text/xml',
+    F_OPENAPI: 'application/vnd.oai.openapi+json'
 }
 
 #: Locale used for system responses (e.g. exceptions)
 # SYSTEM_LOCALE = l10n.Locale('en', 'US')
+# 'common': [
+#     'http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/core',
+#     'http://www.opengis.net/spec/ogcapi-common-2/1.0/conf/collections',
+#     'http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/landing-page',
+#     'http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/json',
+#     'http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/html',
+#     'http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/oas30'
+# ],
+# 'feature': [
+#     'http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core',
+#     'http://www.opengis.net/spec/ogcapi-features-1/1.0/req/oas30',
+#     'http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/html',
+#     'http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson',
+#     'http://www.opengis.net/spec/ogcapi-features-2/1.0/conf/crs',
+#     'http://www.opengis.net/spec/ogcapi-features-3/1.0/conf/queryables',
+#     'http://www.opengis.net/spec/ogcapi-features-3/1.0/conf/queryables-query-parameters',  # noqa
+#     'http://www.opengis.net/spec/ogcapi-features-4/1.0/conf/create-replace-delete',  # noqa
+#     'http://www.opengis.net/spec/ogcapi-features-5/1.0/conf/schemas',
+#     'http://www.opengis.net/spec/ogcapi-features-5/1.0/req/core-roles-features' # noqa
+# ],
+# 'process': [
+#     'http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/ogc-process-description', # noqa
+#     'http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/core',
+#     'http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/json',
+#     'http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/oas30'
+# ],
+# 'edr': [
+#     'http://www.opengis.net/spec/ogcapi-edr-1/1.0/conf/core'
+# ]
+CONFORMANCE = [
+    # Common
+    'http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/core',
+    'http://www.opengis.net/spec/ogcapi-common-2/1.0/conf/collections',
+    'http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/landing-page',
+    'http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/json',
+    'http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/html',
+    'http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/oas30',
 
-CONFORMANCE = {
-    'common': [
-        'http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/core',
-        'http://www.opengis.net/spec/ogcapi-common-2/1.0/conf/collections',
-        'http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/landing-page',
-        'http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/json',
-        'http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/html',
-        'http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/oas30'
-    ],
-    'feature': [
-        'http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core',
-        'http://www.opengis.net/spec/ogcapi-features-1/1.0/req/oas30',
-        'http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/html',
-        'http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson',
-        'http://www.opengis.net/spec/ogcapi-features-2/1.0/conf/crs',
-        'http://www.opengis.net/spec/ogcapi-features-3/1.0/conf/queryables',
-        'http://www.opengis.net/spec/ogcapi-features-3/1.0/conf/queryables-query-parameters',  # noqa
-        'http://www.opengis.net/spec/ogcapi-features-4/1.0/conf/create-replace-delete',  # noqa
-        'http://www.opengis.net/spec/ogcapi-features-5/1.0/conf/schemas',
-        'http://www.opengis.net/spec/ogcapi-features-5/1.0/req/core-roles-features' # noqa
-    ],
-    'process': [
-        'http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/ogc-process-description', # noqa
-        'http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/core',
-        'http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/json',
-        'http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/oas30'
-    ],
-    'edr': [
-        'http://www.opengis.net/spec/ogcapi-edr-1/1.0/conf/core'
-    ]
-}
+    # Features
+    'http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core',
+    'http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson',
+    'http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/html',
+    'http://www.opengis.net/spec/ogcapi-features-1/1.0/req/oas30',
+    
+    # EDR
+    'http://www.opengis.net/spec/ogcapi-edr-1/1.0/conf/core'
+
+]
 
 OGC_RELTYPES_BASE = 'http://www.opengis.net/def/rel/ogc/1.0'
 
@@ -318,11 +337,10 @@ def get_format(request: HttpRequest, accepted_formats: list[str]):
                         format = accepted_formats[0]; break
                             
             except Exception as ex:
-                print(ex) 
                 # If any problem arises, return the preferred format...
                 return accepted_formats[0]
 
-    # Return the format
+    # Return the format 
     return format
 
 def deconstruct_url(request: HttpRequest):
