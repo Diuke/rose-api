@@ -1,7 +1,7 @@
 import json
 from django.conf import settings
 from geoapi.models import Collection
-from geoapi.openapi import parameters
+from geoapi.openapi import parameters, responses
 
 def deep_copy(obj: dict):
     return json.loads(json.dumps(obj))
@@ -49,55 +49,9 @@ base_json_doc = {
         "operationId": "listVersionsv2",
         "summary": "List API versions",
         "responses": {
-          "200": {
-            "description": "200 response",
-            "content": {
-              "application/json": {
-                "examples": {
-                  "foo": {
-                    "value": {
-                      "versions": [
-                        {
-                          "status": "CURRENT",
-                          "updated": "2011-01-21T11:33:21Z",
-                          "id": "v2.0",
-                          "links": [
-                            {
-                              "href": "http://127.0.0.1:8774/v2/",
-                              "rel": "self"
-                            }
-                          ]
-                        },
-                        {
-                          "status": "EXPERIMENTAL",
-                          "updated": "2013-07-23T11:33:21Z",
-                          "id": "v3.0",
-                          "links": [
-                            {
-                              "href": "http://127.0.0.1:8774/v3/",
-                              "rel": "self"
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "300": {
-            "description": "300 response",
-            "content": {
-              "application/json": {
-                "examples": {
-                  "foo": {
-                    "value": "{\n \"versions\": [\n       {\n         \"status\": \"CURRENT\",\n         \"updated\": \"2011-01-21T11:33:21Z\",\n         \"id\": \"v2.0\",\n         \"links\": [\n             {\n                 \"href\": \"http://127.0.0.1:8774/v2/\",\n                 \"rel\": \"self\"\n             }\n         ]\n     },\n     {\n         \"status\": \"EXPERIMENTAL\",\n         \"updated\": \"2013-07-23T11:33:21Z\",\n         \"id\": \"v3.0\",\n         \"links\": [\n             {\n                 \"href\": \"http://127.0.0.1:8774/v3/\",\n                 \"rel\": \"self\"\n             }\n         ]\n     }\n ]\n}\n"
-                  }
-                }
-              }
-            }
-          }
+            "200": responses.get_features_landing_response(),
+            "400": responses.get_features_invalid_parameter_response(),
+            "500": responses.get_features_server_error_response()
         }
       }
     },

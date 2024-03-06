@@ -174,11 +174,11 @@ def sql_type_from_model_type(model_type: str, options: dict, creating=False):
         # TODO Fix primary key creation
         if 'primary_key' in options and options['primary_key'] == True: sql_type += " NOT NULL PRIMARY KEY"
 
-    if model_type == "ForeignKey":
-        referenced_column = str(options['to'])
-        if check_string(referenced_column):
-            sql_type += f" REFERENCES geoapi_{ referenced_column }"
-        else: raise Exception("Wrong column name")
+        if model_type == "ForeignKey":
+            referenced_column = str(options['to'])
+            if check_string(referenced_column):
+                sql_type += f" REFERENCES geoapi_{ referenced_column }"
+            else: raise Exception("Wrong column name")
     
     return sql_type
 
@@ -236,7 +236,6 @@ def get_model(collection: Collection):
     
     model = type(collection.model_name, (models.Model,), attrs)
     return model
-    
     
 """
 # GeoJSON enabled

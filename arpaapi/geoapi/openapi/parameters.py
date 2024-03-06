@@ -1,7 +1,5 @@
 base_schema_features = "https://schemas.opengis.net/ogcapi/features/part1/1.0/openapi/ogcapi-features-1.yaml"
 
-#/components/parameters/limit
-
 def build_custom_query_parameter(name, description, required, schema={}):
     return {
         "name": name, #required

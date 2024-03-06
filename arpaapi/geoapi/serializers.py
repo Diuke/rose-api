@@ -1,3 +1,5 @@
+from timeit import default_timer as timer
+
 import json
 import datetime
 
@@ -193,10 +195,11 @@ class EDRGeoJSONSerializer(GeoJSONBaseSerializer):
 
                 if isinstance(geom, GEOSGeometry):
                     data["geometry"] = json.loads(geom.geojson)
+
                 else:
                     data["geometry"] = None
 
-            else:                
+            else:        
                 data["geometry"] = None
 
         return data

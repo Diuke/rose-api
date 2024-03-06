@@ -18,7 +18,7 @@ datetime = Datetime range for filtering by datetime. It can be a closed interval
 
 #GLOBAL CONSTANTS
 LIMIT_DEFAULT = 100
-MAX_ELEMENTS = 100000
+MAX_ELEMENTS = 1000000
 
 def collection_query(request: HttpRequest, collectionId: str, query: str):
     model_name = collectionId
@@ -75,6 +75,19 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
         return responses.response_bad_request_400("Corridor query not yet supported")
     
     elif query == geoapi_schemas.ITEMS: 
+        # Perform query for all elements
+        # if collection.api_type == geoapi_models.Collection.API_Types.EDR:
+        #     display_fields = [ 'id' ] + collection.display_fields.split(',')
+        #     display_fields = [ f'A.{field}' for field in display_fields ]
+        #     items = f"SELECT {', '.join(display_fields)}, st_AsGeoJSON(B.location, {6}) AS geojson FROM geoapi_{collection.model_name} as A, geoapi_airqualitysensor as B LIMIT 10"
+
+        #     items = collection_model.objects.raw(
+        #         raw
+        #     )
+        #     for i in range(10):
+        #         print(items[i])
+        # else:
+        # TODO raw queries for improving geojson speed from the database
         items = collection_model.objects.all()
 
         # Query parameters
@@ -83,8 +96,13 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
             'bbox', 'datetime', 'skipGeometry', 'limit', 'offset', 'f'
         ]
         # Collection-specific accepted query parameters:
-        collection.filter_fields
-        accepted_parameters += [ field for field in collection.filter_fields.split(',') ]
+        filter_fields = collection.filter_fields.split(",")
+        accepted_parameters += [ field for field in filter_fields ]
+
+        django_filters = ["", "__lte", "__lt", "__gte", "__gt", "__ne", "__in"]
+        for field in filter_fields: 
+            for d_filter in django_filters:
+                accepted_parameters.append((field + d_filter))
 
         # Return 400 if there is an "unknown" parameter in the request
         for key, value in request.GET.items():
@@ -110,17 +128,23 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
             return responses.response_bad_request_400("Error in offset parameter")
 
         filtering_params = {}
-        filter_fields = collection.filter_fields.split(",")
         for field in filter_fields:
             # Iterate the different filters that django supports
             # This supports the usage of other operators as != (__ne), > (__gt), >= (__gte), < (__lt), <= (__lte)
-            django_filters = ["", "__lte", "__lt", "__gte", "__gt", "__ne"]
             for d_filter in django_filters:
                 filter_name = (field + d_filter)
-                filtering_params[filter_name] = request.GET.get(filter_name, None)
-                #validate boolean fields
-                if filtering_params[filter_name] == 'true': filtering_params[filter_name] = True
-                if filtering_params[filter_name] == 'false': filtering_params[filter_name] = False
+                filtering_param_value = request.GET.get(filter_name, None)
+                
+                if filtering_param_value is not None:
+                    filtering_params[filter_name] = filtering_param_value
+
+                    # If it is an array filter - input must be comma-separated
+                    if d_filter == "__in":
+                        filtering_params[filter_name] = filtering_params[filter_name].strip().split(",")
+
+                    #validate boolean fields
+                    if filtering_params[filter_name] == 'true': filtering_params[filter_name] = True
+                    if filtering_params[filter_name] == 'false': filtering_params[filter_name] = False
 
         #filters
         # bbox filter
