@@ -35,7 +35,7 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
 
     links = []
     # Self link
-    self_link_href = f'{base_url}collections/{collection.model_name}/items'
+    self_link_href = f'{base_url}/collections/{collection.model_name}/items'
     if query_params:
         self_link_href += f'?{query_params}'
     links.append(
@@ -43,7 +43,7 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
     )
 
     # Parent collection link
-    parent_collection_link = f'{base_url}collections/{collection.model_name}'
+    parent_collection_link = f'{base_url}/collections/{collection.model_name}'
     links.append(
         geoapi_schemas.LinkSchema(href=parent_collection_link, rel="collection", type=utils.content_type_from_format(f), title=f"{collection.description}")
     )
@@ -51,7 +51,7 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
     # alternate format links
     for link_format in accepted_formats:
         html_link_href_params = utils.replace_or_create_param(query_params, 'f', link_format)
-        html_link_href = f'{base_url}collections/{collection.model_name}/items/?{html_link_href_params}'
+        html_link_href = f'{base_url}/collections/{collection.model_name}/items/?{html_link_href_params}'
         links.append(
             geoapi_schemas.LinkSchema(href=html_link_href, rel="alternate", type=utils.content_type_from_format(link_format), title=f"Items as {link_format.upper()}.")
         )

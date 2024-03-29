@@ -33,7 +33,7 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 200 * 1000000 #200 MB
 # Database maximum lenght of table name
 MAX_TABLE_NAME_LENGTH = 30
 # BASE_API_URL = 'http://localhost:8000/api/' # For linkbuilding - use trailing slash
-BASE_API_URL = 'http://192.168.1.169:8000/api/' # For linkbuilding - use trailing slash
+BASE_API_URL = 'http://192.168.1.169:8000/api' # For linkbuilding - use trailing slash
 
 # Application definition
 

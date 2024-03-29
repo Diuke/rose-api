@@ -12,25 +12,55 @@ from geoapi.models import Collection
 from geoapi.schemas import schemas
 from geoapi import utils
 
-def build_collection_object(obj: Collection, links=[], extent=schemas.ExtentSchema()):
+def build_collection_object(obj: Collection, links: list[schemas.LinkSchema] = [], extent=schemas.ExtentSchema()):
     """
     Dynamic function for building a collection object independent if it is an EDR or a Feature Collection.
 
     Optional collection parameters, such as links, extent, etc, must be sent as parameters.
     """
-    # Add the Landing links to the links
-    links += utils.build_landing_links()
+
+    # TODO Build the links for each collection here...
+    base_url:str = str(settings.BASE_API_URL)
+    obj_links = links.copy()
+
+    # Collection linkbuilding
+    # Add self link if it does not exist
+    if len(list(filter(lambda x: x.rel == 'self', obj_links))) == 0:
+        self_link = f'{base_url}/collections/{obj.model_name}'
+        # Items links
+        obj_links.append(
+            schemas.LinkSchema(href=self_link, type=utils.content_type_from_format('json'), rel="self", title=f"This collection")
+        )
+
+    # Items links
+    items_format_list = ['geojson','json','html'] #TODO dynamically build this with items formats
+    for items_format in items_format_list:
+        items_link = f'{base_url}/collections/{obj.model_name}/items?f={items_format}'
+        # Items links
+        obj_links.append(
+            schemas.LinkSchema(href=items_link, rel="items", type=utils.content_type_from_format(items_format), title=f"Items as {items_format.upper()}")
+        )
+        
+    # Alternative Links
+    alt_format_list = ['json','html'] #TODO dynamically build this with collection formats
+    for alt_format in alt_format_list:
+        alt_link = f'{base_url}/collections/{obj.model_name}/?f={alt_format}'
+        obj_links.append(
+            schemas.LinkSchema(href=alt_link, rel="alternate", type=utils.content_type_from_format(alt_format), title=f"Collection as {alt_format.upper()}")
+        )
+
+    # Landing Links
+    obj_links += utils.build_landing_links()
 
     if obj.api_type == Collection.API_Types.EDR:
         # Build collection layers for EDR Collection
-
         collection_object = schemas.EDRCollectionSchema(
-            id=obj.model_name, title=obj.title, description=obj.description, links=links, extent=extent
+            id=obj.model_name, title=obj.title, description=obj.description, links=obj_links, extent=extent
         )
 
     elif obj.api_type == Collection.API_Types.FEATURES: 
         collection_object = schemas.FeaturesCollectionSchema(
-            id=obj.model_name, title=obj.title, description=obj.description, links=links, extent=extent
+            id=obj.model_name, title=obj.title, description=obj.description, links=obj_links, extent=extent
         )
     else:
         return {}
@@ -92,19 +122,10 @@ class CollectionsSerializer(JsonBaseSerializer):
         self.stream.write("]}")
 
     def get_dump_object(self, obj: Collection):
-        # TODO Build the links for each collection here...
-        base_url:str = str(settings.BASE_API_URL)
-        obj_links = []
+        # Build the extent from the collection
+        collection_extent = schemas.ExtentSchema()
 
-        # Items links
-        items_format_list = ['geojson','json','html']
-        for items_format in items_format_list:
-            items_link = f'{base_url}collections/{obj.model_name}/items?f={items_format}'
-            obj_links.append(
-                schemas.LinkSchema(href=items_link, rel="items", type=utils.content_type_from_format(items_format), title=f"Items as {items_format.upper()}")
-            )
-
-        return build_collection_object(obj, links=obj_links)
+        return build_collection_object(obj, extent=collection_extent)
 
 # Serializer for simple JSON object with all the properties in the first level of the JSON.
 class SimpleJsonSerializer(JsonBaseSerializer):
@@ -143,14 +164,14 @@ class EDRGeoJSONSerializer(GeoJSONBaseSerializer):
         self._cts = {}  # cache of CoordTransform's
         links_list = [ link.to_object() for link in self.links ]
         links_str = json.dumps(links_list)
-        timestamp = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
         self.stream.write(
             '{"type": "FeatureCollection", '
             '"crs": {"type": "name", "properties": {"name": "http://www.opengis.net/def/crs/OGC/1.3/CRS84"}},'
             '"numberMatched": %d, "numberReturned": %d,'
             '"parameters": [],'
             '"links": %s,'
-            '"timestamp": "%s",'
+            '"timeStamp": "%s",'
             ' "features": [' % (self.number_matched, self.number_returned, links_str, timestamp)
         )
 
@@ -231,13 +252,13 @@ class FeaturesGeoJSONSerializer(GeoJSONBaseSerializer):
         self._cts = {}  # cache of CoordTransform's
         links_list = [ link.to_object() for link in self.links ]
         links_str = json.dumps(links_list)
-        timestamp = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
+        timestamp = utils.get_timestamp()
         self.stream.write(
             '{"type": "FeatureCollection", '
             '"crs": {"type": "name", "properties": {"name": "http://www.opengis.net/def/crs/OGC/1.3/CRS84"}},'
             '"numberMatched": %d, "numberReturned": %d,'
             '"links": %s,'
-            '"timestamp": "%s",'
+            '"timeStamp": "%s",'
             ' "features": [' % (self.number_matched, self.number_returned, links_str, timestamp)
         )
 

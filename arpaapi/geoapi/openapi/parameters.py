@@ -15,8 +15,26 @@ def build_custom_query_parameter(name, description, required, schema={}):
 
 # The following functions extract the $ref of parameters coming from OGC API - Features specification
 def get_features_bbox_parameter():
-    suffix = "#/components/parameters/bbox"
-    return {"$ref": f'{base_schema_features}{suffix}'}
+    bbox_description = """
+    Only features that have a geometry that intersects the bounding box are selected.
+    The bounding box is provided as four numbers.
+    """
+    param = build_custom_query_parameter(
+        'bbox',
+        description=bbox_description,
+        required=False,
+        schema={
+            "type": "array",
+            "minItems": 4,
+            "maxItems": 6,
+            "items": {
+                "type": "number"
+            },
+            "style": "form",
+            "explode": False
+        }
+    )
+    return param
 
 def get_features_datetime_parameter():
     suffix = "#/components/parameters/datetime"

@@ -13,6 +13,7 @@ collection_items_base = {
         "parameters":[
             parameters.get_f_parameter(formats=['geojson','json','html'], default='geojson'),
             parameters.get_features_bbox_parameter(),
+            parameters.get_features_datetime_parameter(),
             parameters.get_features_limit_parameter(),
             parameters.get_features_offset_parameter(),
             parameters.get_features_skip_geometry_parameter(),
@@ -120,8 +121,13 @@ def generate_openapi_document():
         items_path = f'/collections/{collection.model_name}/items'
         collection_object = deep_copy(collection_items_base)
       
+        # The Collection description
         collection_object['get']['description'] = collection.description
-        collection_object['get']['operationId'] = f'get{collection.model_name}Features'
+
+        # The Collection ID is the model name + _Collection
+        collection_object['get']['operationId'] = f'{collection.model_name}'
+
+        # Build the query parameters options
         for filter_field in collection.filter_fields.split(','):
             collection_object['get']['parameters'].append(
                 parameters.build_custom_query_parameter(
@@ -135,7 +141,6 @@ def generate_openapi_document():
                 )
             )
         base["paths"][items_path] = collection_object
-        print(base["paths"][items_path])
 
     return base
 

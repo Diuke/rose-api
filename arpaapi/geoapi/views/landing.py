@@ -28,7 +28,7 @@ def landing(request: HttpRequest):
     links += landing_links
 
     # conformance link
-    conformance_link = f'{base_url}conformance/?f=json'
+    conformance_link = f'{base_url}/conformance/?f=json'
     links.append(
         schemas.LinkSchema(
             href=conformance_link, 
@@ -40,7 +40,7 @@ def landing(request: HttpRequest):
     
 
     # API definition links
-    api_link = f'{base_url}api/'
+    api_link = f'{base_url}/api/'
     links.append(
         schemas.LinkSchema(
             href=api_link, 
@@ -59,7 +59,7 @@ def landing(request: HttpRequest):
     )
 
     # Collections Link
-    collections_link = f'{base_url}collections/?f=json'
+    collections_link = f'{base_url}/collections/?f=json'
     links.append(
         schemas.LinkSchema(
             href=collections_link, 

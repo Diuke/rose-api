@@ -34,7 +34,7 @@ def collection_by_id(request: HttpRequest, collectionId: str):
 
         links = []
         # Self link
-        self_link_href = f'{base_url}collections/{collection_model_name}'
+        self_link_href = f'{base_url}/collections/{collection_model_name}'
         if query_params:
             self_link_href += f'?{query_params}'
         links.append(

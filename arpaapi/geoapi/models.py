@@ -57,6 +57,7 @@ class Collection(models.Model):
         choices=API_Types,
         default=API_Types.FEATURES,
     )
+    # TODO: Add extent to model
 
     def __str__(self): 
         return f'{self.title} ({self.model_name})' 

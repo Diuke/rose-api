@@ -61,15 +61,22 @@ class LandingSchema(BaseModel):
 
 # Spatial Schemas
 class ExtentSchema(BaseModel):
-    bbox: list[float | int] = [-180,-90,180,90]
+    bbox: list[float | int | None] = [ -180,-90,180,90 ]
+    temporal: list[str | None] | None = None #["2000-01-01T00:00:00", None]
 
     def to_object(self):
-        return {
+        return_extent = {
             "spatial": {
                 "bbox": self.bbox,
                 "crs": "http://www.opengis.net/def/crs/OGC/1.3/CRS84"
             }
         }
+        if self.temporal is not None:
+            return_extent["temporal"] = {
+                "interval": self.temporal 
+            }
+
+        return return_extent
     
 # Features API specific schemas
 class FeaturesCollectionSchema(BaseModel):

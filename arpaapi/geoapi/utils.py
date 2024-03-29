@@ -433,15 +433,21 @@ def build_landing_links():
     links = []
 
     base_url = str(settings.BASE_API_URL)
-    landing_link_json = f'{base_url}?f=json'
+    landing_link_json = f'{base_url}/?f=json'
     links.append(
         schemas.LinkSchema(href=landing_link_json, rel="root", type=content_type_from_format('json'), title="Landing page of this server as JSON.")
     )
 
     base_url = str(settings.BASE_API_URL)
-    landing_link_html = f'{base_url}?f=html'
+    landing_link_html = f'{base_url}/?f=html'
     links.append(
         schemas.LinkSchema(href=landing_link_html, rel="root", type=content_type_from_format('html'), title="Landing page of this server as HTML.")
     )
 
     return links
+
+def get_timestamp():
+    # The test suite uses Java ZonedDateTime.parse() 
+    timestamp = dt.datetime.now(tz=None).strftime("%Y-%m-%dT%H:%M:%S.%fz")
+    print(timestamp)
+    return timestamp
