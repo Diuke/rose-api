@@ -5,7 +5,7 @@ from django.http import HttpRequest
 
 def response_geojson_200(items_serialized):
     headers = {}
-    content_type = "application/json" #by default geojson
+    content_type = "application/geo+json" #by default geojson
     return HttpResponse(
         items_serialized, 
         headers=headers, 
@@ -15,9 +15,19 @@ def response_geojson_200(items_serialized):
 
 def response_json_200(items_serialized):
     headers = {}
-    content_type = "application/json" #by default geojson
+    content_type = "application/json" #by default json
     return HttpResponse(
         items_serialized, 
+        headers=headers, 
+        content_type=content_type,
+        status=200
+    )
+
+def response_openapi_200(api_doc_serialized):
+    headers = {}
+    content_type = "application/vnd.oai.openapi+json;version=3.0" # The OpenAPI media type has not been registered yet with IANA and may change.
+    return HttpResponse(
+        api_doc_serialized, 
         headers=headers, 
         content_type=content_type,
         status=200

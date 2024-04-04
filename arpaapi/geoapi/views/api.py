@@ -18,4 +18,4 @@ def api(request: HttpRequest):
         # TODO return OPEN API document
         openapi_document = openapi.generate_openapi_document()
         serialized = json.dumps(openapi_document)
-        return responses.response_json_200(serialized)
+        return responses.response_openapi_200(serialized)
