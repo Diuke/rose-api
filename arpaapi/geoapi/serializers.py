@@ -290,9 +290,36 @@ class FeaturesGeoJSONSerializer(GeoJSONBaseSerializer):
 
         return data
     
+class SingleFeatureJSONSerializer(JsonBaseSerializer):
+    def _init_options(self):
+        super()._init_options()
+        self.links: list[schemas.LinkSchema] = self.json_kwargs.pop("links", [])
 
-# GeoJSON Serializer for OGC API Features responses. It modifies the Django GeoJSON serializer to accept foreign-key geometry attribute.
-class FeatureGeoJSONSerializer(GeoJSONBaseSerializer):
+    def start_serialization(self):
+        """
+        Start the serialization with an empty string. This serializer should receive 1 element only, so
+        The response should be a single JSON element. This prevents the creation of a list of 
+        collections with a single element.
+        """
+        self._init_options()
+        self.stream.write("")
+
+    def end_serialization(self):
+        """
+        Finish the serialization with an empty string again.
+        """
+        self.stream.write("")
+
+    def get_dump_object(self, obj):
+        links_list = [ link.to_object() for link in self.links ]
+
+        data = self._current
+        data["links"] = links_list
+        return data
+
+
+# GeoJSON Serializer for a single OGC API Feature. It modifies the Django GeoJSON serializer to accept foreign-key geometry attribute.
+class SingleFeatureGeoJSONSerializer(GeoJSONBaseSerializer):
     """
     Serializer for Features GeoJSON responses.
 
@@ -301,47 +328,27 @@ class FeatureGeoJSONSerializer(GeoJSONBaseSerializer):
     """
     def _init_options(self):
         super()._init_options()
-        self.number_matched = self.json_kwargs.pop("number_matched", 0)
-        self.number_returned = self.json_kwargs.pop("number_returned", 0)
         self.links: list[schemas.LinkSchema] = self.json_kwargs.pop("links", [])
-        if (
-            self.selected_fields is not None
-            and self.geometry_field is not None
-            and self.geometry_field not in self.selected_fields
-        ):
-            self.selected_fields = [*self.selected_fields, self.geometry_field]
         
     def start_serialization(self):
         self._init_options()
         self._cts = {}  # cache of CoordTransform's
-        links_list = [ link.to_object() for link in self.links ]
-        links_str = json.dumps(links_list)
-        timestamp = utils.get_timestamp()
-        self.stream.write(
-            '{"type": "FeatureCollection", '
-            '"crs": {"type": "name", "properties": {"name": "http://www.opengis.net/def/crs/OGC/1.3/CRS84"}},'
-            '"numberMatched": %d, "numberReturned": %d,'
-            '"links": %s,'
-            '"timeStamp": "%s",'
-            ' "features": [' % (self.number_matched, self.number_returned, links_str, timestamp)
-        )
+        self.stream.write("")
+
+    def end_serialization(self):
+        self.stream.write("")
 
     def get_dump_object(self, obj):
+        links_list = [ link.to_object() for link in self.links ]
+
         data = {
             "type": "Feature",
+            "crs": { "type": "name", "properties": {"name": "http://www.opengis.net/def/crs/OGC/1.3/CRS84"} },
             "id": obj.pk if self.id_field is None else getattr(obj, self.id_field),
-            "properties": self._current,
+            "properties": self._current
         }
 
         # Add any missing fields to the geojson
-        for f in self.selected_fields:
-            if f not in data["properties"] and f != self.geometry_field:
-                data["properties"][f] = getattr(obj, f)
-
-        if (
-            self.selected_fields is None or "pk" in self.selected_fields
-        ) and "pk" not in data["properties"]:
-            data["properties"]["pk"] = str(obj._meta.pk.value_to_string(obj))
         if self._geometry:
             if self._geometry.srid != self.srid:
                 # If needed, transform the geometry in the srid of the global
@@ -373,4 +380,6 @@ class FeatureGeoJSONSerializer(GeoJSONBaseSerializer):
             else:                
                 data["geometry"] = None
 
+        # Add the links at the end
+        data["links"] = links_list
         return data

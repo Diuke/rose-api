@@ -10,11 +10,14 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
+from dotenv import load_dotenv
 from pathlib import Path
+import os
+
+load_dotenv() 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
@@ -23,7 +26,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = '^a$1hag-+oer0tfn!ir*s71r$0320n*-cdziqj#g+5dnypg@k'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG')
 
 ALLOWED_HOSTS = []
 
@@ -33,7 +36,7 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 200 * 1000000 #200 MB
 # Database maximum lenght of table name
 MAX_TABLE_NAME_LENGTH = 30
 # BASE_API_URL = 'http://localhost:8000/api/' # For linkbuilding - use trailing slash
-BASE_API_URL = 'http://192.168.1.169:8000/api' # For linkbuilding - use trailing slash
+BASE_API_URL = os.getenv('BASE_API_URL') # For linkbuilding - remove trailing slash
 
 # Application definition
 
@@ -89,11 +92,11 @@ WSGI_APPLICATION = 'arpaapi.wsgi.application'
 DATABASES = {
     "default": {
         "ENGINE": "django.contrib.gis.db.backends.postgis",
-        "HOST": "localhost",
-        "PORT": "5432",
-        "NAME": "arpaapi",
-        "USER": "arpaapi",
-        "PASSWORD": "arpaapi123"
+        "HOST": os.getenv('DB_HOST'),
+        "PORT": os.getenv('DB_PORT'),
+        "NAME": os.getenv('DB_NAME'),
+        "USER": os.getenv('DB_USER'),
+        "PASSWORD": os.getenv('DB_PASSWORD')
     },
 }
 

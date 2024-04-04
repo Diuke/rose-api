@@ -4,6 +4,8 @@ from django.core import serializers
 from geoapi import models as geoapi_models
 from geoapi import utils
 from geoapi.schemas import schemas as geoapi_schemas
+from geoapi import serializers as geoapi_serializers
+from geoapi import responses
 
 def collection_item_by_id(request: HttpRequest, collectionId: str, featureId: int):
     model_name = collectionId
@@ -28,10 +30,48 @@ def collection_item_by_id(request: HttpRequest, collectionId: str, featureId: in
         geoapi_schemas.LinkSchema(href=self_link_href, rel="self", type=utils.content_type_from_format(f), title="This document")
     )
 
-    # The collection 
-    collection = geoapi_models.Collection.objects.get(model_name=collectionId)
-    collection_model = geoapi_models.get_model(collection)
-    feature_id = featureId
-    feature = collection_model.objects.filter(pk=feature_id)
-    feature_serialized = serializers.serialize('json', feature)
-    return HttpResponse(feature_serialized, status=200)
+    # Parent collection link
+    parent_collection_link = f'{base_url}/collections/{collection.model_name}'
+    links.append(
+        geoapi_schemas.LinkSchema(href=parent_collection_link, rel="collection", type=utils.content_type_from_format(f), title=f"{collection.description}")
+    )
+
+    # alternate format links
+    for link_format in accepted_formats:
+        html_link_href_params = utils.replace_or_create_param(query_params, 'f', link_format)
+        html_link_href = f'{base_url}/collections/{collection.model_name}/items/?{html_link_href_params}'
+        links.append(
+            geoapi_schemas.LinkSchema(href=html_link_href, rel="alternate", type=utils.content_type_from_format(link_format), title=f"Items as {link_format.upper()}.")
+        )
+
+    item_feature_id = featureId
+    item = collection_model.objects.filter(pk=item_feature_id)
+    fields = collection.display_fields.split(",")
+
+    if f == 'geojson':
+        serializer = geoapi_serializers.SingleFeatureGeoJSONSerializer()
+        geometry_field = collection.geometry_field
+        options = {
+            "geometry_field": geometry_field, 
+            "links": links,
+            "fields": fields
+        }
+        items_serialized = serializer.serialize(item, **options)
+        return responses.response_geojson_200(items_serialized)
+
+    elif f == 'json':
+        serializer = geoapi_serializers.SingleFeatureJSONSerializer()
+        options = {
+            "links": links,
+            "fields": fields
+        }
+        items_serialized = serializer.serialize(item, **options)
+        return responses.response_json_200(items_serialized)
+    
+    elif f == 'html':
+        #TODO Add render for HTML format
+        return responses.response_bad_request_400("Format HTML not yet supported")
+    
+    else:
+        return responses.response_bad_request_400(f"Format {f} not yet supported")
+
