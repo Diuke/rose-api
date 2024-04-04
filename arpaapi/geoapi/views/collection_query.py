@@ -114,6 +114,8 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
         skip_geometry = request.GET.get('skipGeometry', None)
         if skip_geometry is not None:
             skip_geometry = True if skip_geometry == "true" else False
+        else: 
+            skip_geometry = False
 
         # Limit parameter, if not an integer, return error
         try:
@@ -235,6 +237,7 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
                 "number_returned": retrieved_elements, 
                 "links": links,
                 "geometry_field": geometry_field, 
+                "skip_geometry": skip_geometry, 
                 "fields": fields
             }
             items_serialized = serializer.serialize(items, **options)
@@ -270,6 +273,8 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
         skip_geometry = request.GET.get('skipGeometry', None)
         if skip_geometry is not None:
             skip_geometry = True if skip_geometry == "true" else False
+        else: 
+            skip_geometry = False
         crs = request.GET.get('crs', None)
         limit = request.GET.get('limit', LIMIT_DEFAULT ) #100 elements by default
         offset = request.GET.get('offset', 0)
@@ -305,6 +310,7 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
             options = {
                 "number_matched": full_count, 
                 "number_returned": retrieved_elements, 
+                "skip_geometry": skip_geometry, 
                 "geometry_field": geometry_field, 
                 "fields": fields,
                 "links": links

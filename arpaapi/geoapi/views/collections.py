@@ -27,7 +27,7 @@ def collections(request: HttpRequest):
 
     collection_list = geoapi_models.Collection.objects.all()
 
-    base_api_url = geoapi_models.GeoAPIConfiguration.objects.first().base_url
+    # base_api_url = geoapi_models.GeoAPIConfiguration.objects.first().base_url
     base_url, path, query_params = utils.deconstruct_url(request)
     # base_url = base_api_url
     base_url:str = str(settings.BASE_API_URL)

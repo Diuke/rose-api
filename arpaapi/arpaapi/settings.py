@@ -89,9 +89,11 @@ WSGI_APPLICATION = 'arpaapi.wsgi.application'
 DATABASES = {
     "default": {
         "ENGINE": "django.contrib.gis.db.backends.postgis",
+        "HOST": "localhost",
+        "PORT": "5432",
         "NAME": "arpaapi",
         "USER": "arpaapi",
-        "PASSWORD": "Juanpargo123"
+        "PASSWORD": "arpaapi123"
     },
 }
 

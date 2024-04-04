@@ -172,8 +172,13 @@ def sql_type_from_model_type(model_type: str, options: dict, creating=False):
 
     if creating:
         if 'null' in options and options['null'] == False: sql_type += " NOT NULL"
-        # TODO Fix primary key creation
-        if 'primary_key' in options and options['primary_key'] == True: sql_type += " NOT NULL PRIMARY KEY"
+
+        # TODO Fix primary key creation            
+        if 'primary_key' in options and options['primary_key'] == True: 
+            sql_type = "SERIAL" if sql_type == "integer" else "BIGSERIAL"
+            sql_type += " NOT NULL PRIMARY KEY"
+            
+            print(sql_type)
 
         if model_type == "ForeignKey":
             referenced_column = str(options['to'])
