@@ -104,16 +104,6 @@ class FeaturesCollectionSchema(BaseModel):
             "crs": self.crs
         }    
         return obj
-    
-class ItemSchema(BaseModel):
-
-    def to_object(self):
-        return {}
-    
-class ItemsSchema(BaseModel):
-
-    def to_object(self):
-        return {}
 
 # EDR API specific schemas
 class DataQueriesSchema(BaseModel):
