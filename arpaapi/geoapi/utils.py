@@ -187,6 +187,16 @@ def process_datetime_interval(datetime_string: str):
     start_date = None
     end_date = None
     dates_split = datetime_string.split("/") 
+    print(dates_split)
+
+    # if only one date
+    if len(dates_split) == 1:
+        try:
+            start_date = dt.datetime.fromisoformat(dates_split[0])
+            end_date = dt.datetime.fromisoformat(dates_split[0])
+        except Exception as ex:
+            print(ex)
+
     # for now only supports 2-item closed and open intervals
     try:
         if dates_split[0] == ".." or dates_split[0] == "..": #interval-open-start
@@ -198,6 +208,7 @@ def process_datetime_interval(datetime_string: str):
             end_date = None
         else:
             end_date = dt.datetime.fromisoformat(dates_split[1])
+
     except Exception as ex:
         print(ex)
     

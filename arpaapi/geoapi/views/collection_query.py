@@ -144,18 +144,6 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
             # This also allows to use both Point and MultiPoint in a single filter.
             items = items.filter(**{ f'{geometry_filter}__distance_lte': ( geometry, D(m=10) ) })
 
-        # Validations for parameter-name parameter
-        if parameter_name_param is not None:
-            if len(parameter_name_param) == 0: return responses.response_bad_request_400(msg="No fields to display")
-            params_to_display = parameter_name_param.split(",")      
-            available_fields = collection.display_fields.split(",")
-            for p in params_to_display:
-                if p not in available_fields:
-                    return responses.response_bad_request_400(msg="Field not in the collection fields")
-            
-            # overwrite displaying fields
-            fields = params_to_display
-
     
     ##################################
     ############  RADIUS  ############
@@ -212,18 +200,6 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
 
             else: return responses.response_bad_request_400(msg="Parameter within-units is mandatory when the within parameter is specified.")
         else: return responses.response_bad_request_400(msg="Parameter within is mandatory.")
-
-        # Validations for parameter-name parameter
-        if parameter_name_param is not None:
-            if len(parameter_name_param) == 0: return responses.response_bad_request_400(msg="No fields to display")
-            params_to_display = parameter_name_param.split(",")      
-            available_fields = collection.display_fields.split(",")
-            for p in params_to_display:
-                if p not in available_fields:
-                    return responses.response_bad_request_400(msg="Field not in the collection fields")
-            
-            # overwrite displaying fields
-            fields = params_to_display
         
 
     ##################################
@@ -240,7 +216,34 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
         if has_invalid_params: 
             return responses.response_bad_request_400(f"Unknown Parameter(s): {str(invalid_params)}")
         
-        return responses.response_bad_request_400("Area query not yet supported")
+        # Retrieve values from parameters
+        coords_param = request.GET.get('coords', None)
+        z_param = request.GET.get('z', None)
+        parameter_name_param = request.GET.get('parameter-name', None)
+        crs_param = request.GET.get('crs', None)
+        
+        # Validations for crs_param parameter
+        # TODO validate crs_param
+
+        # Validations for z_param parameter
+        # TODO validate z_param
+
+        # Validations for coords parameter
+        if coords_param:
+            valid_coords, geometry = read_geometry(coords_param)
+            if not valid_coords: 
+                return responses.response_bad_request_400(msg="Invalid Coordinates")
+
+            if not (geometry.geom_type == 'Polygon' or geometry.geom_type == 'MultiPolygon'):
+                return responses.response_bad_request_400(msg="Invalid Geometry")
+        else: return responses.response_bad_request_400(msg="Parameter coords is mandatory.")
+
+        # Get the geometry filter field
+        geometry_filter = collection.geometry_field
+        if '.' in collection.geometry_field:
+            geometry_filter = collection.geometry_field.replace('.', '__')
+        items = items.filter( **{ f'{geometry_filter}__intersects': geometry } )
+
     
     ##################################
     ############  CUBE   #############
@@ -255,6 +258,7 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
         has_invalid_params, invalid_params = has_invalid_parameter(request, accepted_parameters)
         if has_invalid_params: 
             return responses.response_bad_request_400(f"Unknown Parameter(s): {str(invalid_params)}")
+        
         
         return responses.response_bad_request_400("Cube query not yet supported")
     
@@ -425,6 +429,19 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
         if datetime_field is not None:
             start_date, end_date = utils.process_datetime_interval(datetime_param)
             items = utils.filter_datetime(items, start_date, end_date, datetime_field)
+
+    # Validations for parameter-name parameter - ONLY FOR EDR
+    if collection.api_type == geoapi_models.Collection.API_Types.EDR:
+        if parameter_name_param is not None:
+            if len(parameter_name_param) == 0: return responses.response_bad_request_400(msg="No fields to display")
+            params_to_display = parameter_name_param.split(",")      
+            available_fields = collection.display_fields.split(",")
+            for p in params_to_display:
+                if p not in available_fields:
+                    return responses.response_bad_request_400(msg="Field not in the collection fields")
+            
+            # overwrite displaying fields
+            fields = params_to_display
 
     # Pagination
     # Maximum 100.000 elements in request
