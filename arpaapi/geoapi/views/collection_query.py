@@ -125,7 +125,32 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
         # TODO validate crs_param
 
         # Validations for z_param parameter
-        # TODO validate z_param
+        if z_param:
+            # Get the z field
+            z_filter_field = collection.z_field
+            if '.' in collection.z_field:
+                z_filter_field = collection.z_field.replace('.', '__')
+            
+            # Do the filter by interval, single value, or list of values
+            if z_param != '': 
+                min_z = None
+                max_z = None
+                if '/' in z_param: #interval
+                    z_values = z_param.split("/") #allows multiple
+                    filter_dict = {
+                        f'{z_filter_field}__gte': z_values[0],
+                        f'{z_filter_field}__lte': z_values[1],
+                    }
+
+                else: 
+                    z_values = z_param.split(",") #allows multiple
+                    if len(z_values) == 1: # single z value
+                        filter_dict = { f'{z_filter_field}': z_values[0] }
+                        
+                    else: # list of values
+                        filter_dict = { f'{z_filter_field}__in': z_values }
+
+            items = utils.filter_by_dict(items, filter_dict)
 
         # Validations for coords parameter
         if coords_param:
@@ -171,7 +196,32 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
         # TODO validate crs_param
 
         # Validations for z_param parameter
-        # TODO validate z_param
+        if z_param:
+            # Get the z field
+            z_filter_field = collection.z_field
+            if '.' in collection.z_field:
+                z_filter_field = collection.z_field.replace('.', '__')
+            
+            # Do the filter by interval, single value, or list of values
+            if z_param != '': 
+                min_z = None
+                max_z = None
+                if '/' in z_param: #interval
+                    z_values = z_param.split("/") #allows multiple
+                    filter_dict = {
+                        f'{z_filter_field}__gte': z_values[0],
+                        f'{z_filter_field}__lte': z_values[1],
+                    }
+
+                else: 
+                    z_values = z_param.split(",") #allows multiple
+                    if len(z_values) == 1: # single z value
+                        filter_dict = { f'{z_filter_field}': z_values[0] }
+                        
+                    else: # list of values
+                        filter_dict = { f'{z_filter_field}__in': z_values }
+
+            items = utils.filter_by_dict(items, filter_dict)
 
         # Validations for coords parameter
         if coords_param:
@@ -226,7 +276,32 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
         # TODO validate crs_param
 
         # Validations for z_param parameter
-        # TODO validate z_param
+        if z_param:
+            # Get the z field
+            z_filter_field = collection.z_field
+            if '.' in collection.z_field:
+                z_filter_field = collection.z_field.replace('.', '__')
+            
+            # Do the filter by interval, single value, or list of values
+            if z_param != '': 
+                min_z = None
+                max_z = None
+                if '/' in z_param: #interval
+                    z_values = z_param.split("/") #allows multiple
+                    filter_dict = {
+                        f'{z_filter_field}__gte': z_values[0],
+                        f'{z_filter_field}__lte': z_values[1],
+                    }
+
+                else: 
+                    z_values = z_param.split(",") #allows multiple
+                    if len(z_values) == 1: # single z value
+                        filter_dict = { f'{z_filter_field}': z_values[0] }
+                        
+                    else: # list of values
+                        filter_dict = { f'{z_filter_field}__in': z_values }
+
+            items = utils.filter_by_dict(items, filter_dict)
 
         # Validations for coords parameter
         if coords_param:
@@ -248,7 +323,7 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
     ##################################
     ############  CUBE   #############
     ##################################
-    elif query == geoapi_schemas.CUBE: 
+    elif query == geoapi_schemas.CUBE:
         # Add request-specific parameters
         accepted_parameters += [
             'bbox', 'z', 'parameter-name', 'crs'
@@ -269,7 +344,33 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
         # TODO validate crs_param
 
         # Validations for z_param parameter
-        # TODO validate z_param
+        if z_param:
+            # Get the z field
+            z_filter_field = collection.z_field
+            if '.' in collection.z_field:
+                z_filter_field = collection.z_field.replace('.', '__')
+            
+            # Do the filter by interval, single value, or list of values
+            if z_param != '': 
+                min_z = None
+                max_z = None
+                if '/' in z_param: #interval
+                    z_values = z_param.split("/") #allows multiple
+                    filter_dict = {
+                        f'{z_filter_field}__gte': z_values[0],
+                        f'{z_filter_field}__lte': z_values[1],
+                    }
+
+                else: 
+                    z_values = z_param.split(",") #allows multiple
+                    if len(z_values) == 1: # single z value
+                        filter_dict = { f'{z_filter_field}': z_values[0] }
+                        
+                    else: # list of values
+                        filter_dict = { f'{z_filter_field}__in': z_values }
+
+            items = utils.filter_by_dict(items, filter_dict)
+
 
         # Validations for bbox parameter
         if bbox_param:
@@ -457,16 +558,17 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
 
     # Validations for parameter-name parameter - ONLY FOR EDR
     if collection.api_type == geoapi_models.Collection.API_Types.EDR:
-        if parameter_name_param is not None:
-            if len(parameter_name_param) == 0: return responses.response_bad_request_400(msg="No fields to display")
-            params_to_display = parameter_name_param.split(",")      
-            available_fields = collection.display_fields.split(",")
-            for p in params_to_display:
-                if p not in available_fields:
-                    return responses.response_bad_request_400(msg="Field not in the collection fields")
-            
-            # overwrite displaying fields
-            fields = params_to_display
+        if query != geoapi_schemas.ITEMS:
+            if parameter_name_param is not None:
+                if len(parameter_name_param) == 0: return responses.response_bad_request_400(msg="No fields to display")
+                params_to_display = parameter_name_param.split(",") 
+                available_fields = collection.display_fields.split(",")
+                for p in params_to_display:
+                    if p not in available_fields:
+                        return responses.response_bad_request_400(msg="Field not in the collection fields")
+                
+                # overwrite displaying fields
+                fields = params_to_display
 
     # Pagination
     # Maximum 100.000 elements in request

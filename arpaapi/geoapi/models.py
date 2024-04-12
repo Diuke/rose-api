@@ -52,6 +52,8 @@ class Collection(models.Model):
     datetime_field = models.TextField(default=None, null=True, blank=True)
     geometry_filter_field = models.TextField(default=None, null=True, blank=True)
     locations_field = models.TextField(default=None, null=True, blank=True)
+    z_field = models.TextField(default=None, null=True, blank=True)
+
     api_type = models.CharField(
         max_length=8,
         choices=API_Types,
