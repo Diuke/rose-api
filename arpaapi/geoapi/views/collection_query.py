@@ -26,6 +26,10 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
     collection_model = geoapi_models.get_model(collection)
     base_url, path, query_params = utils.deconstruct_url(request)
 
+    # Check if the query type is allowed for the collection
+    if not is_query_allowed_for_collection(collection, query):
+        return responses.response_bad_request_400(msg=f"Query not supported for collection {model_name}")
+
     # Format of the response
     # Default format is GeoJSON
     accepted_formats = [
@@ -56,66 +60,125 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
             geoapi_schemas.LinkSchema(href=html_link_href, rel="alternate", type=utils.content_type_from_format(link_format), title=f"Items as {link_format.upper()}.")
         )
 
+    # Common query parameters retrieval
+    accepted_parameters = [
+        'datetime', # Filter by datetime
+        'skipGeometry', # Custom parameter for not returning the geometry
+        'limit', 'offset', # Pagination
+        'f'
+    ]
+
+    # Retrieve values from common parameters
+    datetime_param = request.GET.get('datetime', None)
+    skip_geometry_param = request.GET.get('skipGeometry', None)
+    
+    # Limit parameter, if not an integer, return error
+    try:
+        limit = int(request.GET.get('limit', LIMIT_DEFAULT)) #100 elements by default
+    except:
+        return responses.response_bad_request_400("Error in limit parameter")
+    
+    # Offset parameter, if not an integer, return error
+    try:
+        offset = int(request.GET.get('offset', 0))
+    except:
+        return responses.response_bad_request_400("Error in offset parameter")
+    
+    # Initially retrieve all items from the specified collection.
+    items = collection_model.objects.all()
+
+    # Do specific stuff for each specific Query type
+
     if query == geoapi_schemas.POSITION:
+        # Add request-specific parameters
+        accepted_parameters += [
+            'coords', 'z', 'parameter-name', 'crs'
+        ]
+        # Retrieve values from parameters
+        coords_param = request.GET.get('coords', None)
+        z_param = request.GET.get('z', None)
+        parameter_name_param = request.GET.get('parameter-name', None)
+        crs_param = request.GET.get('crs', None)
+
         return responses.response_bad_request_400("Position query not yet supported")  
     
     elif query == geoapi_schemas.RADIUS:   
+        # Add request-specific parameters
+        accepted_parameters += [
+            'coords', 'within', 'within-units', 'z', 'parameter-name', 'crs'
+        ]
         return responses.response_bad_request_400("Radius query not yet supported")
 
     elif query == geoapi_schemas.AREA: 
+        # Add request-specific parameters
+        accepted_parameters += [
+            'coords', 'z', 'parameter-name', 'crs'
+        ]
         return responses.response_bad_request_400("Area query not yet supported")
     
     elif query == geoapi_schemas.CUBE: 
+        # Add request-specific parameters
+        accepted_parameters += [
+            'bbox', 'z', 'parameter-name', 'crs'
+        ]
         return responses.response_bad_request_400("Cube query not yet supported")
     
     elif query == geoapi_schemas.TRAJECTORY: 
+        # Add request-specific parameters
+        accepted_parameters += [
+            'coords', 'z', 'parameter-name', 'crs'
+        ]
         return responses.response_bad_request_400("Trajectory query not yet supported")
     
     elif query == geoapi_schemas.CORRIDOR: 
+        # Add request-specific parameters
+        accepted_parameters += [
+            'coords', 'z', 
+            'resolution-x', 'resolution-z', 
+            'corridor-height', 'height-units',
+            'corridor-width', 'width-units',
+            'parameter-name', 'crs'
+        ]
         return responses.response_bad_request_400("Corridor query not yet supported")
     
     elif query == geoapi_schemas.ITEMS: 
-        # Perform query for all elements
-        # if collection.api_type == geoapi_models.Collection.API_Types.EDR:
-        #     display_fields = [ 'id' ] + collection.display_fields.split(',')
-        #     display_fields = [ f'A.{field}' for field in display_fields ]
-        #     items = f"SELECT {', '.join(display_fields)}, st_AsGeoJSON(B.location, {6}) AS geojson FROM geoapi_{collection.model_name} as A, geoapi_airqualitysensor as B LIMIT 10"
+        # ITEMS query could belong to OGC API Features and OGC API - EDR. 
 
-        #     items = collection_model.objects.raw(
-        #         raw
-        #     )
-        #     for i in range(10):
-        #         print(items[i])
-        # else:
-        # TODO raw queries for improving geojson speed from the database
-        items = collection_model.objects.all()
-
-        # Query parameters
-        # Common accepted parameters of this request
-        accepted_parameters = [
-            'bbox', 'datetime', 'skipGeometry', 'limit', 'offset', 'f'
+        # Add request-specific parameters
+        accepted_parameters += [
+            'bbox', 'parameter-name', 'crs'
         ]
-        # Collection-specific accepted query parameters:
+        # Add parameters to filter 
         filter_fields = collection.filter_fields.split(",")
         accepted_parameters += [ field for field in filter_fields ]
 
+        # Accordingly to the service, different configuration is used.
+        #   For EDR collections, use the EDR GeoJSON serializer and accept different parameters
+        #   For Feature collections, use the FeaturesGeoJSON serializer.
+        if collection.api_type == geoapi_models.Collection.API_Types.EDR:
+            serializer = geoapi_serializers.EDRGeoJSONSerializer()
+        elif collection.api_type == geoapi_models.Collection.API_Types.FEATURES:
+            # Features Collection
+            serializer = geoapi_serializers.FeaturesGeoJSONSerializer()
+        else: 
+            return responses.response_bad_request_400(msg="Collection with wrong type")        
+
+        # Django Filters for filtering by different fields
         django_filters = ["", "__lte", "__lt", "__gte", "__gt", "__ne", "__in"]
         for field in filter_fields: 
             for d_filter in django_filters:
                 accepted_parameters.append((field + d_filter))
 
-        # Return 400 if there is an "unknown" parameter in the request
-        for key, value in request.GET.items():
-            if key not in accepted_parameters:
-                return responses.response_bad_request_400(f"Unknown Parameter: {key}")
+        # Return 400 if there is an invalid parameter in the request            
+        has_invalid_params, invalid_params = has_invalid_parameter(request, accepted_parameters)
+        if has_invalid_params: 
+            return responses.response_bad_request_400(f"Unknown Parameter(s): {str(invalid_params)}")
 
         bbox = request.GET.get('bbox', None)
-        datetime_param = request.GET.get('datetime', None)
-        skip_geometry = request.GET.get('skipGeometry', None)
-        if skip_geometry is not None:
-            skip_geometry = True if skip_geometry == "true" else False
+        if skip_geometry_param is not None:
+            skip_geometry_param = True if skip_geometry_param == "true" else False
         else: 
-            skip_geometry = False
+            skip_geometry_param = False
 
         # Limit parameter, if not an integer, return error
         try:
@@ -223,7 +286,7 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
         # Last part and return
         if f == 'geojson':
             fields = collection.display_fields.split(",")
-            geometry_field = None if skip_geometry else collection.geometry_field
+            geometry_field = None if skip_geometry_param else collection.geometry_field
 
             # Select the serializer depending on the API type.
             #   For EDR collections, use the EDR GeoJSON serializer, for normal Features
@@ -237,7 +300,7 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
                 "number_returned": retrieved_elements, 
                 "links": links,
                 "geometry_field": geometry_field, 
-                "skip_geometry": skip_geometry, 
+                "skip_geometry": skip_geometry_param, 
                 "fields": fields
             }
             items_serialized = serializer.serialize(items, **options)
@@ -266,15 +329,19 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
             return responses.response_bad_request_400(f"Format {f} not yet supported")
 
     elif query == geoapi_schemas.LOCATIONS: 
-        # Query parameters
+        # Add request-specific parameters
+        accepted_parameters += [
+            'locationId', 'parameter-name', 'crs'
+        ]
+        # Fetch query parameters
         location_id = request.GET.get('locationId', None)
         datetime_param = request.GET.get('datetime', None)
         parameter_name = request.GET.get('parameter-name', None)
-        skip_geometry = request.GET.get('skipGeometry', None)
-        if skip_geometry is not None:
-            skip_geometry = True if skip_geometry == "true" else False
+
+        if skip_geometry_param is not None:
+            skip_geometry_param = True if skip_geometry_param == "true" else False
         else: 
-            skip_geometry = False
+            skip_geometry_param = False
         crs = request.GET.get('crs', None)
         limit = request.GET.get('limit', LIMIT_DEFAULT ) #100 elements by default
         offset = request.GET.get('offset', 0)
@@ -305,12 +372,12 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
         # Format and response
         if f == 'geojson':
             fields = collection.display_fields.split(",")
-            geometry_field = None if skip_geometry else collection.geometry_field
+            geometry_field = None if skip_geometry_param else collection.geometry_field
             serializer = geoapi_serializers.EDRGeoJSONSerializer()
             options = {
                 "number_matched": full_count, 
                 "number_returned": retrieved_elements, 
-                "skip_geometry": skip_geometry, 
+                "skip_geometry": skip_geometry_param, 
                 "geometry_field": geometry_field, 
                 "fields": fields,
                 "links": links
@@ -341,5 +408,37 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
     else:
         return responses.response_bad_request_400("Query not supported")
 
-def create_pagination_links():
-    return []
+def validate_bbox(bbox: str):
+    pass
+
+def validate_coords(coords: str):
+    pass
+
+def is_query_allowed_for_collection(collection: geoapi_models.Collection, query: str):
+    if collection.api_type == geoapi_models.Collection.API_Types.FEATURES:
+        supported = [geoapi_schemas.ITEMS]
+
+    if collection.api_type == geoapi_models.Collection.API_Types.FEATURES:
+        supported = [
+            geoapi_schemas.POSITION, geoapi_schemas.RADIUS, geoapi_schemas.AREA, geoapi_schemas.CUBE,
+            geoapi_schemas.TRAJECTORY, geoapi_schemas.CORRIDOR, geoapi_schemas.ITEMS, geoapi_schemas.LOCATIONS,
+            geoapi_schemas.INSTANCES
+        ]
+
+    for supp in supported:
+        if query == supp: return True
+
+    # If the query does not match any query types, it is not supported
+    return False
+
+def has_invalid_parameter(request, accepted_parameters: list[str]):
+    # Return 400 if there is an "unknown" parameter in the request
+    invalid_parameters = []
+    for key, value in request.GET.items():
+        if key not in accepted_parameters:
+            invalid_parameters.append(key)
+    if len(invalid_parameters) > 0:
+        return True, invalid_parameters
+    else: 
+        return False, invalid_parameters
+
