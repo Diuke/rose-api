@@ -7,7 +7,6 @@ from geoapi import serializers as geoapi_serializers
 from geoapi import responses as geoapi_responses
 from geoapi.schemas import schemas
 from geoapi import utils
-from geoapi import urls
 
 def collections(request: HttpRequest):
     """
