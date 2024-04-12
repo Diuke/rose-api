@@ -121,6 +121,8 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
         parameter_name_param = request.GET.get('parameter-name', None)
         crs_param = request.GET.get('crs', None)
 
+        filter_dict = {}
+
         # Validations for crs_param parameter
         # TODO validate crs_param
 
@@ -133,24 +135,17 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
             
             # Do the filter by interval, single value, or list of values
             if z_param != '': 
-                min_z = None
-                max_z = None
                 if '/' in z_param: #interval
                     z_values = z_param.split("/") #allows multiple
-                    filter_dict = {
-                        f'{z_filter_field}__gte': z_values[0],
-                        f'{z_filter_field}__lte': z_values[1],
-                    }
+                    filter_dict[f'{z_filter_field}__gte'] = z_values[0]
+                    filter_dict[f'{z_filter_field}__lte'] = z_values[1]
 
                 else: 
                     z_values = z_param.split(",") #allows multiple
                     if len(z_values) == 1: # single z value
-                        filter_dict = { f'{z_filter_field}': z_values[0] }
-                        
+                        filter_dict[f'{z_filter_field}'] = z_values[0]
                     else: # list of values
-                        filter_dict = { f'{z_filter_field}__in': z_values }
-
-            items = utils.filter_by_dict(items, filter_dict)
+                        filter_dict[f'{z_filter_field}__in'] = z_values
 
         # Validations for coords parameter
         if coords_param:
@@ -167,8 +162,10 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
 
             # Filter by distance of 10 meters (approx. 4 decimals in EPSG:4326).
             # This also allows to use both Point and MultiPoint in a single filter.
-            items = items.filter(**{ f'{geometry_filter}__distance_lte': ( geometry, D(m=10) ) })
-
+            filter_dict[f'{geometry_filter}__distance_lte'] = ( geometry, D(m=10) )
+        
+        # Filter by the specified filters
+        items = utils.filter_by_dict(items, filter_dict)
     
     ##################################
     ############  RADIUS  ############
@@ -192,6 +189,8 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
         parameter_name_param = request.GET.get('parameter-name', None)
         crs_param = request.GET.get('crs', None)
 
+        filter_dict = {}
+
         # Validations for crs_param parameter
         # TODO validate crs_param
 
@@ -204,24 +203,17 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
             
             # Do the filter by interval, single value, or list of values
             if z_param != '': 
-                min_z = None
-                max_z = None
                 if '/' in z_param: #interval
                     z_values = z_param.split("/") #allows multiple
-                    filter_dict = {
-                        f'{z_filter_field}__gte': z_values[0],
-                        f'{z_filter_field}__lte': z_values[1],
-                    }
+                    filter_dict[f'{z_filter_field}__gte'] = z_values[0]
+                    filter_dict[f'{z_filter_field}__lte'] = z_values[1]
 
                 else: 
                     z_values = z_param.split(",") #allows multiple
                     if len(z_values) == 1: # single z value
-                        filter_dict = { f'{z_filter_field}': z_values[0] }
-                        
+                        filter_dict[f'{z_filter_field}'] = z_values[0]
                     else: # list of values
-                        filter_dict = { f'{z_filter_field}__in': z_values }
-
-            items = utils.filter_by_dict(items, filter_dict)
+                        filter_dict[f'{z_filter_field}__in'] = z_values
 
         # Validations for coords parameter
         if coords_param:
@@ -242,14 +234,14 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
 
                 # Filter by the specified distance.
                 # Send to D() the specified unit (see the Distance function units), and the measurement
-                items = items.filter(
-                    **{
-                        f'{geometry_filter}__distance_lte': ( geometry, D(**{within_units_param: within_param}) ) 
-                    }
-                )
+                
+                filter_dict[f'{geometry_filter}__distance_lte'] = ( geometry, D(**{within_units_param: within_param}) )
 
             else: return responses.response_bad_request_400(msg="Parameter within-units is mandatory when the within parameter is specified.")
         else: return responses.response_bad_request_400(msg="Parameter within is mandatory.")
+
+        # Filter by the specified filters
+        items = utils.filter_by_dict(items, filter_dict)
         
 
     ##################################
@@ -271,6 +263,8 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
         z_param = request.GET.get('z', None)
         parameter_name_param = request.GET.get('parameter-name', None)
         crs_param = request.GET.get('crs', None)
+
+        filter_dict = {}
         
         # Validations for crs_param parameter
         # TODO validate crs_param
@@ -284,40 +278,36 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
             
             # Do the filter by interval, single value, or list of values
             if z_param != '': 
-                min_z = None
-                max_z = None
                 if '/' in z_param: #interval
                     z_values = z_param.split("/") #allows multiple
-                    filter_dict = {
-                        f'{z_filter_field}__gte': z_values[0],
-                        f'{z_filter_field}__lte': z_values[1],
-                    }
+                    filter_dict[f'{z_filter_field}__gte'] = z_values[0]
+                    filter_dict[f'{z_filter_field}__lte'] = z_values[1]
 
                 else: 
                     z_values = z_param.split(",") #allows multiple
                     if len(z_values) == 1: # single z value
-                        filter_dict = { f'{z_filter_field}': z_values[0] }
-                        
+                        filter_dict[f'{z_filter_field}'] = z_values[0]
                     else: # list of values
-                        filter_dict = { f'{z_filter_field}__in': z_values }
-
-            items = utils.filter_by_dict(items, filter_dict)
+                        filter_dict[f'{z_filter_field}__in'] = z_values
 
         # Validations for coords parameter
         if coords_param:
             valid_coords, geometry = read_geometry(coords_param)
             if not valid_coords: 
                 return responses.response_bad_request_400(msg="Invalid Coordinates")
-
             if not (geometry.geom_type == 'Polygon' or geometry.geom_type == 'MultiPolygon'):
                 return responses.response_bad_request_400(msg="Invalid Geometry")
+            
+            # Get the geometry filter field
+            geometry_filter = collection.geometry_field
+            if '.' in collection.geometry_field:
+                geometry_filter = collection.geometry_field.replace('.', '__')
+            filter_dict[f'{geometry_filter}__intersects'] = geometry
+
         else: return responses.response_bad_request_400(msg="Parameter coords is mandatory.")
 
-        # Get the geometry filter field
-        geometry_filter = collection.geometry_field
-        if '.' in collection.geometry_field:
-            geometry_filter = collection.geometry_field.replace('.', '__')
-        items = items.filter( **{ f'{geometry_filter}__intersects': geometry } )
+        # Filter by the specified filters
+        items = utils.filter_by_dict(items, filter_dict)
 
     
     ##################################
@@ -340,6 +330,8 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
         parameter_name_param = request.GET.get('parameter-name', None)
         crs_param = request.GET.get('crs', None)
 
+        filter_dict = {}
+
         # Validations for crs_param parameter
         # TODO validate crs_param
 
@@ -352,22 +344,17 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
             
             # Do the filter by interval, single value, or list of values
             if z_param != '': 
-                min_z = None
-                max_z = None
                 if '/' in z_param: #interval
                     z_values = z_param.split("/") #allows multiple
-                    filter_dict = {
-                        f'{z_filter_field}__gte': z_values[0],
-                        f'{z_filter_field}__lte': z_values[1],
-                    }
+                    filter_dict[f'{z_filter_field}__gte'] = z_values[0]
+                    filter_dict[f'{z_filter_field}__lte'] = z_values[1]
 
                 else: 
                     z_values = z_param.split(",") #allows multiple
                     if len(z_values) == 1: # single z value
-                        filter_dict = { f'{z_filter_field}': z_values[0] }
-                        
+                        filter_dict[f'{z_filter_field}'] = z_values[0]
                     else: # list of values
-                        filter_dict = { f'{z_filter_field}__in': z_values }
+                        filter_dict[f'{z_filter_field}__in'] = z_values
 
             items = utils.filter_by_dict(items, filter_dict)
 
@@ -387,7 +374,8 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
         
         # Filter by bbox
         items = utils.filter_bbox(items, bbox, collection)
-    
+
+
     ##################################
     ########  TRAJECTORY   ###########
     ##################################
@@ -401,6 +389,51 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
         has_invalid_params, invalid_params = has_invalid_parameter(request, accepted_parameters)
         if has_invalid_params: 
             return responses.response_bad_request_400(f"Unknown Parameter(s): {str(invalid_params)}")
+        
+        # Retrieve values from parameters
+        coords_param = request.GET.get('coords', None)
+        z_param = request.GET.get('z', None)
+        parameter_name_param = request.GET.get('parameter-name', None)
+        crs_param = request.GET.get('crs', None)
+
+        filter_dict = {}
+
+        # Validations for z_param parameter
+        if z_param:
+            # Get the z field
+            z_filter_field = collection.z_field
+            if '.' in collection.z_field:
+                z_filter_field = collection.z_field.replace('.', '__')
+            
+            # Do the filter by interval, single value, or list of values
+            if z_param != '': 
+                if '/' in z_param: #interval
+                    z_values = z_param.split("/") #allows multiple
+                    filter_dict[f'{z_filter_field}__gte'] = z_values[0]
+                    filter_dict[f'{z_filter_field}__lte'] = z_values[1]
+
+                else: 
+                    z_values = z_param.split(",") #allows multiple
+                    if len(z_values) == 1: # single z value
+                        filter_dict[f'{z_filter_field}'] = z_values[0]
+                    else: # list of values
+                        filter_dict[f'{z_filter_field}__in'] = z_values
+
+        # Validations for coords parameter
+        if coords_param:
+            valid_coords, geometry = read_geometry(coords_param)
+            if not valid_coords: 
+                return responses.response_bad_request_400(msg="Invalid Coordinates")
+            if not (geometry.geom_type == 'LINESTRING' or geometry.geom_type == 'MULTILINESTRING'):
+                return responses.response_bad_request_400(msg="Invalid Geometry")
+            
+            # Get the geometry filter field
+            geometry_filter = collection.geometry_field
+            if '.' in collection.geometry_field:
+                geometry_filter = collection.geometry_field.replace('.', '__')
+            filter_dict[f'{geometry_filter}__intersects'] = geometry
+
+        else: return responses.response_bad_request_400(msg="Parameter coords is mandatory.")
         
         return responses.response_bad_request_400("Trajectory query not yet supported")
     
