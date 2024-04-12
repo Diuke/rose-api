@@ -38,7 +38,7 @@ def collections(request: HttpRequest):
     links += landing_links
 
     # Self link
-    self_link_href = f'{base_url}/collections/'
+    self_link_href = f'{base_url}/collections'
     if query_params:
         self_link_href += f'?{query_params}'
     links.append(
@@ -48,7 +48,7 @@ def collections(request: HttpRequest):
     # Alternate format links
     for link_format in accepted_formats:
         html_link_href_params = utils.replace_or_create_param(query_params, 'f', link_format)
-        html_link_href = f'{base_url}/collections/?{html_link_href_params}'
+        html_link_href = f'{base_url}/collections?{html_link_href_params}'
         links.append(
             schemas.LinkSchema(href=html_link_href, rel="alternate", type=utils.content_type_from_format(link_format), title=f"This document as {link_format.upper()}.")
         )

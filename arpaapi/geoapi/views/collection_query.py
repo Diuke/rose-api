@@ -58,7 +58,7 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
     # alternate format links
     for link_format in accepted_formats:
         html_link_href_params = utils.replace_or_create_param(query_params, 'f', link_format)
-        html_link_href = f'{base_url}/collections/{collection.model_name}/items/?{html_link_href_params}'
+        html_link_href = f'{base_url}/collections/{collection.model_name}/items?{html_link_href_params}'
         links.append(
             geoapi_schemas.LinkSchema(href=html_link_href, rel="alternate", type=utils.content_type_from_format(link_format), title=f"Items as {link_format.upper()}.")
         )
@@ -259,8 +259,33 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
         if has_invalid_params: 
             return responses.response_bad_request_400(f"Unknown Parameter(s): {str(invalid_params)}")
         
+        # Retrieve values from parameters
+        bbox_param = request.GET.get('bbox', None)
+        z_param = request.GET.get('z', None)
+        parameter_name_param = request.GET.get('parameter-name', None)
+        crs_param = request.GET.get('crs', None)
+
+        # Validations for crs_param parameter
+        # TODO validate crs_param
+
+        # Validations for z_param parameter
+        # TODO validate z_param
+
+        # Validations for bbox parameter
+        if bbox_param:
+            bbox = bbox_param.split(",")
+            #validate bbox
+            if not (isinstance(bbox, list) and (len(bbox) == 4 or len(bbox) == 6)):
+                return responses.response_bad_request_400(msg="Parameter bbox is malformed.")
+            try:
+                bbox = [ float(el) for el in bbox ]
+            except Exception as ex:
+                return responses.response_bad_request_400(msg="Parameter bbox is malformed.")
+            
+        else: return responses.response_bad_request_400(msg="Parameter bbox is mandatory.")
         
-        return responses.response_bad_request_400("Cube query not yet supported")
+        # Filter by bbox
+        items = utils.filter_bbox(items, bbox, collection)
     
     ##################################
     ########  TRAJECTORY   ###########

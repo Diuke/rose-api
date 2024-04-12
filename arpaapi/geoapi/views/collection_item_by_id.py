@@ -39,7 +39,7 @@ def collection_item_by_id(request: HttpRequest, collectionId: str, featureId: in
     # alternate format links
     for link_format in accepted_formats:
         html_link_href_params = utils.replace_or_create_param(query_params, 'f', link_format)
-        html_link_href = f'{base_url}/collections/{collection.model_name}/items/?{html_link_href_params}'
+        html_link_href = f'{base_url}/collections/{collection.model_name}/items?{html_link_href_params}'
         links.append(
             geoapi_schemas.LinkSchema(href=html_link_href, rel="alternate", type=utils.content_type_from_format(link_format), title=f"Items as {link_format.upper()}.")
         )

@@ -154,7 +154,7 @@ def filter_bbox(items: BaseManager[any], bbox: list[str], collection: geoapi_mod
         bbox = bbox[0:4]
 
     bbox_polygon = Polygon.from_bbox(bbox)
-    filter_dict = {f'{geom_field_name}__within': bbox_polygon}
+    filter_dict = {f'{geom_field_name}__intersects': bbox_polygon}
     items = items.filter(**filter_dict)
     return items
 
@@ -384,13 +384,13 @@ def build_landing_links():
     links = []
 
     base_url = str(settings.BASE_API_URL)
-    landing_link_json = f'{base_url}/?f=json'
+    landing_link_json = f'{base_url}?f=json'
     links.append(
         schemas.LinkSchema(href=landing_link_json, rel="root", type=content_type_from_format('json'), title="Landing page of this server as JSON.")
     )
 
     base_url = str(settings.BASE_API_URL)
-    landing_link_html = f'{base_url}/?f=html'
+    landing_link_html = f'{base_url}?f=html'
     links.append(
         schemas.LinkSchema(href=landing_link_html, rel="root", type=content_type_from_format('html'), title="Landing page of this server as HTML.")
     )
