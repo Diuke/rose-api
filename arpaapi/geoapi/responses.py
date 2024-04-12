@@ -52,7 +52,20 @@ def response_html_200(request: HttpRequest, data_serialized: str|None, template:
     return response
 
 def response_bad_request_400(msg="", wrong_param=""):
-    return HttpResponse(msg, status=400)
+    headers = {}
+    content_type = "application/json" #by default json
+
+    return_body = json.dumps({
+        "error": msg,
+        "status": 400
+    })
+
+    return HttpResponse(
+        return_body, 
+        headers=headers, 
+        content_type=content_type,
+        status=400,
+    )
 
 def response_redirect_303(msg=""):
     return HttpResponse(msg, status=303)

@@ -1,3 +1,6 @@
+from django.contrib.gis.geos import GEOSGeometry
+from django.contrib.gis.measure import D
+
 from django.http import HttpRequest
 
 from geoapi import utils
@@ -17,7 +20,7 @@ datetime = Datetime range for filtering by datetime. It can be a closed interval
 """
 
 #GLOBAL CONSTANTS
-LIMIT_DEFAULT = 100
+LIMIT_DEFAULT = 1000
 MAX_ELEMENTS = 1000000
 
 def collection_query(request: HttpRequest, collectionId: str, query: str):
@@ -84,52 +87,144 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
     except:
         return responses.response_bad_request_400("Error in offset parameter")
     
+    # Validate the skipGeometry parameter
+    if skip_geometry_param is not None:
+        skip_geometry_param = True if skip_geometry_param == "true" else False
+    else: 
+        skip_geometry_param = False
+    
+    # Fields to be displayed
+    fields = collection.display_fields.split(",")
+
     # Initially retrieve all items from the specified collection.
     items = collection_model.objects.all()
 
     # Do specific stuff for each specific Query type
 
+    ##################################
+    ##########  POSITION  ############
+    ##################################
     if query == geoapi_schemas.POSITION:
         # Add request-specific parameters
         accepted_parameters += [
             'coords', 'z', 'parameter-name', 'crs'
         ]
+
+        # Return 400 if there is an invalid parameter in the request            
+        has_invalid_params, invalid_params = has_invalid_parameter(request, accepted_parameters)
+        if has_invalid_params: 
+            return responses.response_bad_request_400(f"Unknown Parameter(s): {str(invalid_params)}")
+        
         # Retrieve values from parameters
         coords_param = request.GET.get('coords', None)
         z_param = request.GET.get('z', None)
         parameter_name_param = request.GET.get('parameter-name', None)
         crs_param = request.GET.get('crs', None)
 
-        return responses.response_bad_request_400("Position query not yet supported")  
+        # Validations for crs_param parameter
+        # TODO validate crs_param
+
+        # Validations for z_param parameter
+        # TODO validate z_param
+
+        # Validations for coords parameter
+        if coords_param:
+            valid_coords, geometry = read_geometry(coords_param)
+            if not valid_coords: 
+                return responses.response_bad_request_400(msg="Invalid Coordinates")
+
+            if not (geometry.geom_type == 'Point' or geometry.geom_type == 'MultiPoint'): 
+                return responses.response_bad_request_400(msg="Invalid Geometry")
+            
+            geometry_filter = collection.geometry_field
+            if '.' in collection.geometry_field:
+                geometry_filter = collection.geometry_field.replace('.', '__')
+
+            # Filter by distance of 10 meters (approx. 4 decimals in EPSG:4326).
+            # This also allows to use both Point and MultiPoint in a single filter.
+            items = items.filter(**{ f'{geometry_filter}__distance_lte': ( geometry, D(m=10) ) })
+
+        # Validations for parameter-name parameter
+        if parameter_name_param is not None:
+            if len(parameter_name_param) == 0: return responses.response_bad_request_400(msg="No fields to display")
+            params_to_display = parameter_name_param.split(",")      
+            available_fields = collection.display_fields.split(",")
+            for p in params_to_display:
+                if p not in available_fields:
+                    return responses.response_bad_request_400(msg="Field not in the collection fields")
+            
+            # overwrite displaying fields
+            fields = params_to_display
+
+        #return responses.response_bad_request_400("Position query not yet supported")  
     
+    ##################################
+    ############  RADIUS  ############
+    ##################################
     elif query == geoapi_schemas.RADIUS:   
         # Add request-specific parameters
         accepted_parameters += [
             'coords', 'within', 'within-units', 'z', 'parameter-name', 'crs'
         ]
+
+        # Return 400 if there is an invalid parameter in the request            
+        has_invalid_params, invalid_params = has_invalid_parameter(request, accepted_parameters)
+        if has_invalid_params: 
+            return responses.response_bad_request_400(f"Unknown Parameter(s): {str(invalid_params)}")
+        
         return responses.response_bad_request_400("Radius query not yet supported")
 
+    ##################################
+    ############  AREA   #############
+    ##################################
     elif query == geoapi_schemas.AREA: 
         # Add request-specific parameters
         accepted_parameters += [
             'coords', 'z', 'parameter-name', 'crs'
         ]
+
+        # Return 400 if there is an invalid parameter in the request            
+        has_invalid_params, invalid_params = has_invalid_parameter(request, accepted_parameters)
+        if has_invalid_params: 
+            return responses.response_bad_request_400(f"Unknown Parameter(s): {str(invalid_params)}")
+        
         return responses.response_bad_request_400("Area query not yet supported")
     
+    ##################################
+    ############  CUBE   #############
+    ##################################
     elif query == geoapi_schemas.CUBE: 
         # Add request-specific parameters
         accepted_parameters += [
             'bbox', 'z', 'parameter-name', 'crs'
         ]
+
+        # Return 400 if there is an invalid parameter in the request            
+        has_invalid_params, invalid_params = has_invalid_parameter(request, accepted_parameters)
+        if has_invalid_params: 
+            return responses.response_bad_request_400(f"Unknown Parameter(s): {str(invalid_params)}")
+        
         return responses.response_bad_request_400("Cube query not yet supported")
     
+    ##################################
+    ########  TRAJECTORY   ###########
+    ##################################
     elif query == geoapi_schemas.TRAJECTORY: 
         # Add request-specific parameters
         accepted_parameters += [
             'coords', 'z', 'parameter-name', 'crs'
         ]
+
+        # Return 400 if there is an invalid parameter in the request            
+        has_invalid_params, invalid_params = has_invalid_parameter(request, accepted_parameters)
+        if has_invalid_params: 
+            return responses.response_bad_request_400(f"Unknown Parameter(s): {str(invalid_params)}")
+        
         return responses.response_bad_request_400("Trajectory query not yet supported")
     
+    ##################################
+    #########  CORRIDOR   ############
+    ##################################
     elif query == geoapi_schemas.CORRIDOR: 
         # Add request-specific parameters
         accepted_parameters += [
@@ -139,8 +234,17 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
             'corridor-width', 'width-units',
             'parameter-name', 'crs'
         ]
+
+        # Return 400 if there is an invalid parameter in the request            
+        has_invalid_params, invalid_params = has_invalid_parameter(request, accepted_parameters)
+        if has_invalid_params: 
+            return responses.response_bad_request_400(f"Unknown Parameter(s): {str(invalid_params)}")
+        
         return responses.response_bad_request_400("Corridor query not yet supported")
     
+    ##################################
+    ###########  ITEMS   #############
+    ##################################
     elif query == geoapi_schemas.ITEMS: 
         # ITEMS query could belong to OGC API Features and OGC API - EDR. 
 
@@ -174,23 +278,8 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
         if has_invalid_params: 
             return responses.response_bad_request_400(f"Unknown Parameter(s): {str(invalid_params)}")
 
+        # Get the Bounding Box
         bbox = request.GET.get('bbox', None)
-        if skip_geometry_param is not None:
-            skip_geometry_param = True if skip_geometry_param == "true" else False
-        else: 
-            skip_geometry_param = False
-
-        # Limit parameter, if not an integer, return error
-        try:
-            limit = int(request.GET.get('limit', LIMIT_DEFAULT)) #100 elements by default
-        except:
-            return responses.response_bad_request_400("Error in limit parameter")
-        
-        # Offset parameter, if not an integer, return error
-        try:
-            offset = int(request.GET.get('offset', 0))
-        except:
-            return responses.response_bad_request_400("Error in offset parameter")
 
         filtering_params = {}
         for field in filter_fields:
@@ -225,123 +314,32 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
             
             items = utils.filter_bbox(items, bbox, collection)
 
-        # datetime filter
-        datetime_field = collection.datetime_field
-        if datetime_param is not None:
-            # if the collection has a datetime field to filter
-            if datetime_field is not None:
-                start_date, end_date = utils.process_datetime_interval(datetime_param)
-                items = utils.filter_datetime(items, start_date, end_date, datetime_field)
-
         # model fields filters
         # Iterate the filtering parameters already calculated before. This supports basic filtering operators
         for field in filtering_params.keys():
             if filtering_params[field] is not None:
                 items = utils.filter(items, field, filtering_params[field])
 
-        # Maximum 100.000 elements in request
-        items_count = items.count()
-        if limit > MAX_ELEMENTS and items_count > MAX_ELEMENTS:
-            print("too many elements")
-            return responses.response_bad_request_400("Too many elements")
-        if limit == -1: # Max number
-            limit = MAX_ELEMENTS
-        
-        # pagination
-        if limit is None:
-            if collection.api_type == geoapi_models.Collection.API_Types.EDR:
-                return responses.response_bad_request_400("Limit must be set!")
 
-        items, retrieved_elements, full_count = utils.paginate(items, limit, offset)
-
-        # Create pagination links if the result has pages
-        if limit + offset <= full_count:
-            # next page link
-            next_limit = limit
-            next_offset = limit + offset
-            next_params = query_params
-            next_params = utils.replace_or_create_param(next_params, 'limit', str(next_limit))
-            next_params = utils.replace_or_create_param(next_params, 'offset', str(next_offset))
-            next_link_href = f'{base_url}{path}?{next_params}'
-            next_link = geoapi_schemas.LinkSchema(
-                href=next_link_href, rel='next', type=utils.content_type_from_format(f), title="Next page"
-            )
-            links.append(next_link)
-
-        if offset - limit >= 0:
-            # previous page link
-            prev_limit = limit
-            prev_offset = offset - limit
-            prev_params = query_params
-            prev_params = utils.replace_or_create_param(prev_params, 'limit', str(prev_limit))
-            prev_params = utils.replace_or_create_param(prev_params, 'offset', str(prev_offset))
-            prev_link_href = f'{base_url}{path}?{prev_params}'
-            prev_link = geoapi_schemas.LinkSchema(
-                href=prev_link_href, rel='prev', type=utils.content_type_from_format(f), title="Previous page"
-            )
-            links.append(prev_link)
-
-
-        # format (f) parameter
-        # Last part and return
-        if f == 'geojson':
-            fields = collection.display_fields.split(",")
-            geometry_field = None if skip_geometry_param else collection.geometry_field
-
-            # Select the serializer depending on the API type.
-            #   For EDR collections, use the EDR GeoJSON serializer, for normal Features
-            #   use the FeaturesGeoJSON serializer.
-            if collection.api_type == geoapi_models.Collection.API_Types.EDR:
-                serializer = geoapi_serializers.EDRGeoJSONSerializer()
-            else:
-                serializer = geoapi_serializers.FeaturesGeoJSONSerializer()
-            options = {
-                "number_matched": full_count, 
-                "number_returned": retrieved_elements, 
-                "links": links,
-                "geometry_field": geometry_field, 
-                "skip_geometry": skip_geometry_param, 
-                "fields": fields
-            }
-            items_serialized = serializer.serialize(items, **options)
-            return responses.response_geojson_200(items_serialized)
-
-        elif f == utils.F_JSON:
-            fields = collection.display_fields.split(",")
-            serializer = geoapi_serializers.SimpleJsonSerializer()
-            items_serialized = serializer.serialize(items, fields=fields)
-            return responses.response_json_200(items_serialized)
-
-        elif f == utils.F_CSV:
-            #TODO Add support for CSV format
-            return responses.response_bad_request_400("Format CSV not yet supported")
-        
-        elif f == utils.F_HTML:
-            fields = collection.display_fields.split(",")
-            serializer = geoapi_serializers.SimpleJsonSerializer()
-            items_serialized = serializer.serialize(items, fields=fields)
-
-            if retrieved_elements > 100: 
-                return responses.response_bad_request_400("Request too large for HTML representation - Max 100 elements")
-            return responses.response_html_200(request, items_serialized, "collections/items.html")
-        
-        else:
-            return responses.response_bad_request_400(f"Format {f} not yet supported")
-
+    ##################################
+    #########  LOCATIONS   ###########
+    ##################################
     elif query == geoapi_schemas.LOCATIONS: 
         # Add request-specific parameters
         accepted_parameters += [
             'locationId', 'parameter-name', 'crs'
         ]
+
+        # Return 400 if there is an invalid parameter in the request            
+        has_invalid_params, invalid_params = has_invalid_parameter(request, accepted_parameters)
+        if has_invalid_params: 
+            return responses.response_bad_request_400(f"Unknown Parameter(s): {str(invalid_params)}")
+        
         # Fetch query parameters
         location_id = request.GET.get('locationId', None)
         datetime_param = request.GET.get('datetime', None)
         parameter_name = request.GET.get('parameter-name', None)
 
-        if skip_geometry_param is not None:
-            skip_geometry_param = True if skip_geometry_param == "true" else False
-        else: 
-            skip_geometry_param = False
         crs = request.GET.get('crs', None)
         limit = request.GET.get('limit', LIMIT_DEFAULT ) #100 elements by default
         offset = request.GET.get('offset', 0)
@@ -357,68 +355,130 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
             location_filter_field = collection.locations_field
             items = utils.filter(items, location_filter_field, location_id)
 
-        # pagination
-        if limit is None:
-            return responses.response_bad_request_400("Limit must be set!")
-
-        items, retrieved_elements, full_count = utils.paginate(items, limit, offset)
-
-        if retrieved_elements >= 100000:
-            return responses.response_bad_request_400("Too many elements")
-        
-        # build links
-        links = []
-
-        # Format and response
-        if f == 'geojson':
-            fields = collection.display_fields.split(",")
-            geometry_field = None if skip_geometry_param else collection.geometry_field
-            serializer = geoapi_serializers.EDRGeoJSONSerializer()
-            options = {
-                "number_matched": full_count, 
-                "number_returned": retrieved_elements, 
-                "skip_geometry": skip_geometry_param, 
-                "geometry_field": geometry_field, 
-                "fields": fields,
-                "links": links
-            }
-            items_serialized = serializer.serialize(items, **options)
-            return responses.response_geojson_200(items_serialized)
-
-        elif f == 'json':
-            fields = collection.display_fields.split(",")
-            serializer = geoapi_serializers.SimpleJsonSerializer()
-            items_serialized = serializer.serialize(items, fields=fields)
-            return responses.response_json_200(items_serialized)
-
-        elif f == 'csv':
-            #TODO Add support for CSV format
-            return responses.response_bad_request_400("Format CSV not yet supported")
-        
-        elif f == 'html':
-            #TODO Add render for HTML format
-            return responses.response_bad_request_400("Format HTML not yet supported")
-        
-        else:
-            return responses.response_bad_request_400(f"Format {f} not yet supported")
-
+    ##################################
+    #########  INSTANCES   ###########
+    ##################################
     elif query == geoapi_schemas.INSTANCES: 
         return responses.response_bad_request_400("Instances query not yet supported")
             
     else:
         return responses.response_bad_request_400("Query not supported")
+    
+
+
+    # Datetime filter
+    datetime_field = collection.datetime_field
+    if datetime_param is not None:
+        # if the collection has a datetime field to filter
+        if datetime_field is not None:
+            start_date, end_date = utils.process_datetime_interval(datetime_param)
+            items = utils.filter_datetime(items, start_date, end_date, datetime_field)
+
+    # Pagination
+    # Maximum 100.000 elements in request
+    items_count = items.count()
+    if limit > MAX_ELEMENTS and items_count > MAX_ELEMENTS:
+        print("too many elements")
+        return responses.response_bad_request_400("Too many elements")
+    if limit == -1: # Max number
+        limit = MAX_ELEMENTS
+    
+    # pagination
+    if limit is None:
+        if collection.api_type == geoapi_models.Collection.API_Types.EDR:
+            return responses.response_bad_request_400("Limit must be set!")
+
+    items, retrieved_elements, full_count = utils.paginate(items, limit, offset)
+
+    # Create pagination links if the result has pages
+    if limit + offset <= full_count:
+        # next page link
+        next_limit = limit
+        next_offset = limit + offset
+        next_params = query_params
+        next_params = utils.replace_or_create_param(next_params, 'limit', str(next_limit))
+        next_params = utils.replace_or_create_param(next_params, 'offset', str(next_offset))
+        next_link_href = f'{base_url}{path}?{next_params}'
+        next_link = geoapi_schemas.LinkSchema(
+            href=next_link_href, rel='next', type=utils.content_type_from_format(f), title="Next page"
+        )
+        links.append(next_link)
+
+    if offset - limit >= 0:
+        # previous page link
+        prev_limit = limit
+        prev_offset = offset - limit
+        prev_params = query_params
+        prev_params = utils.replace_or_create_param(prev_params, 'limit', str(prev_limit))
+        prev_params = utils.replace_or_create_param(prev_params, 'offset', str(prev_offset))
+        prev_link_href = f'{base_url}{path}?{prev_params}'
+        prev_link = geoapi_schemas.LinkSchema(
+            href=prev_link_href, rel='prev', type=utils.content_type_from_format(f), title="Previous page"
+        )
+        links.append(prev_link)
+
+    # Return depending on format
+    if f == utils.F_GEOJSON:
+        geometry_field = None if skip_geometry_param else collection.geometry_field
+
+        # Select the serializer depending on the API type.
+        #   For EDR collections, use the EDR GeoJSON serializer, for normal Features
+        #   use the FeaturesGeoJSON serializer.
+        if collection.api_type == geoapi_models.Collection.API_Types.EDR:
+            serializer = geoapi_serializers.EDRGeoJSONSerializer()
+        else:
+            serializer = geoapi_serializers.FeaturesGeoJSONSerializer()
+        options = {
+            "number_matched": full_count, 
+            "number_returned": retrieved_elements, 
+            "links": links,
+            "geometry_field": geometry_field, 
+            "skip_geometry": skip_geometry_param, 
+            "fields": fields
+        }
+        items_serialized = serializer.serialize(items, **options)
+        return responses.response_geojson_200(items_serialized)
+
+    elif f == utils.F_JSON:
+        serializer = geoapi_serializers.SimpleJsonSerializer()
+        items_serialized = serializer.serialize(items, fields=fields)
+        return responses.response_json_200(items_serialized)
+
+    elif f == utils.F_CSV:
+        #TODO Add support for CSV format
+        return responses.response_bad_request_400("Format CSV not yet supported")
+    
+    elif f == utils.F_HTML:
+        serializer = geoapi_serializers.SimpleJsonSerializer()
+        items_serialized = serializer.serialize(items, fields=fields)
+
+        if retrieved_elements > 100: 
+            return responses.response_bad_request_400("Request too large for HTML representation - Max 100 elements")
+        return responses.response_html_200(request, items_serialized, "collections/items.html")
+    
+    else:
+        return responses.response_bad_request_400(f"Format {f} not yet supported")
+        
+
+
 
 def validate_bbox(bbox: str):
     pass
 
-def validate_coords(coords: str):
-    pass
+def read_geometry(coords: str) -> tuple[bool, GEOSGeometry]:
+    try:
+        geometry = GEOSGeometry(coords)
+        if geometry.valid: return True, geometry
+        else: return False, None
+
+    except Exception as ex:
+        return False, None
 
 def is_query_allowed_for_collection(collection: geoapi_models.Collection, query: str):
     if collection.api_type == geoapi_models.Collection.API_Types.FEATURES:
         supported = [geoapi_schemas.ITEMS]
 
-    if collection.api_type == geoapi_models.Collection.API_Types.FEATURES:
+    if collection.api_type == geoapi_models.Collection.API_Types.EDR:
         supported = [
             geoapi_schemas.POSITION, geoapi_schemas.RADIUS, geoapi_schemas.AREA, geoapi_schemas.CUBE,
             geoapi_schemas.TRAJECTORY, geoapi_schemas.CORRIDOR, geoapi_schemas.ITEMS, geoapi_schemas.LOCATIONS,
