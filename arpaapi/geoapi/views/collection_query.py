@@ -156,12 +156,11 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
             # overwrite displaying fields
             fields = params_to_display
 
-        #return responses.response_bad_request_400("Position query not yet supported")  
     
     ##################################
     ############  RADIUS  ############
     ##################################
-    elif query == geoapi_schemas.RADIUS:   
+    elif query == geoapi_schemas.RADIUS:
         # Add request-specific parameters
         accepted_parameters += [
             'coords', 'within', 'within-units', 'z', 'parameter-name', 'crs'
@@ -171,8 +170,61 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
         has_invalid_params, invalid_params = has_invalid_parameter(request, accepted_parameters)
         if has_invalid_params: 
             return responses.response_bad_request_400(f"Unknown Parameter(s): {str(invalid_params)}")
+
+        # Retrieve values from parameters
+        coords_param = request.GET.get('coords', None)
+        within_param = request.GET.get('within', None)
+        within_units_param = request.GET.get('within-units', None)
+        z_param = request.GET.get('z', None)
+        parameter_name_param = request.GET.get('parameter-name', None)
+        crs_param = request.GET.get('crs', None)
+
+        # Validations for crs_param parameter
+        # TODO validate crs_param
+
+        # Validations for z_param parameter
+        # TODO validate z_param
+
+        # Validations for coords parameter
+        if coords_param:
+            valid_coords, geometry = read_geometry(coords_param)
+            if not valid_coords: 
+                return responses.response_bad_request_400(msg="Invalid Coordinates")
+
+            if not (geometry.geom_type == 'Point' or geometry.geom_type == 'MultiPoint'): 
+                return responses.response_bad_request_400(msg="Invalid Geometry")
+        else: return responses.response_bad_request_400(msg="Parameter coords is mandatory.")
+
+        if within_param:
+            if within_units_param:
+                # Get the geometry filter field
+                geometry_filter = collection.geometry_field
+                if '.' in collection.geometry_field:
+                    geometry_filter = collection.geometry_field.replace('.', '__')
+
+                # Filter by the specified distance.
+                # Send to D() the specified unit (see the Distance function units), and the measurement
+                items = items.filter(
+                    **{
+                        f'{geometry_filter}__distance_lte': ( geometry, D(**{within_units_param: within_param}) ) 
+                    }
+                )
+
+            else: return responses.response_bad_request_400(msg="Parameter within-units is mandatory when the within parameter is specified.")
+        else: return responses.response_bad_request_400(msg="Parameter within is mandatory.")
+
+        # Validations for parameter-name parameter
+        if parameter_name_param is not None:
+            if len(parameter_name_param) == 0: return responses.response_bad_request_400(msg="No fields to display")
+            params_to_display = parameter_name_param.split(",")      
+            available_fields = collection.display_fields.split(",")
+            for p in params_to_display:
+                if p not in available_fields:
+                    return responses.response_bad_request_400(msg="Field not in the collection fields")
+            
+            # overwrite displaying fields
+            fields = params_to_display
         
-        return responses.response_bad_request_400("Radius query not yet supported")
 
     ##################################
     ############  AREA   #############
