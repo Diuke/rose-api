@@ -35,6 +35,8 @@ MAX_TABLE_NAME_LENGTH = 30
 # BASE_API_URL = 'http://localhost:8000/api/' # For linkbuilding - use trailing slash
 BASE_API_URL = 'http://192.168.1.169:8000/api' # For linkbuilding - use trailing slash
 
+OUTPUT_DIR = 'C:/Users/juan-/Desktop/ARPAAPI_results'
+
 # Application definition
 
 INSTALLED_APPS = [
