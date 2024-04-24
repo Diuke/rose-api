@@ -2,6 +2,7 @@ import json
 from django.conf import settings
 from geoapi.models import Collection
 from geoapi.openapi import parameters, responses
+from geoapi.schemas import schemas as geoapi_schemas
 
 def deep_copy(obj: dict):
     return json.loads(json.dumps(obj))
@@ -30,6 +31,174 @@ collection_items_base = {
             }
         },
     }
+}
+
+edr_collection_base = {
+    geoapi_schemas.POSITION: {
+        "get":{
+            "description":"",
+            "operationId":"",
+            "parameters":[
+                parameters.get_f_parameter(formats=['geojson','json','html'], default='geojson'),
+                parameters.get_features_datetime_parameter(),
+                parameters.get_features_limit_parameter(),
+                parameters.get_features_offset_parameter(),
+                parameters.get_features_skip_geometry_parameter(),
+                parameters.get_ref_schema("https://schemas.opengis.net/ogcapi/edr/1.0/openapi/parameters/positionCoords.yaml"),
+                parameters.get_ref_schema("https://schemas.opengis.net/ogcapi/edr/1.0/openapi/parameters/parameter-name.yaml"),
+                parameters.get_ref_schema("https://schemas.opengis.net/ogcapi/edr/1.0/openapi/parameters/z.yaml"),
+            ],
+            "responses":{
+                "200":{
+                    "$ref":""
+                },
+                "400":{
+                    "$ref":""
+                },
+                "500":{
+                    "$ref":""
+                }
+            },
+        }
+    },
+    geoapi_schemas.RADIUS: {
+        "get":{
+            "description":"",
+            "operationId":"",
+            "parameters":[
+                parameters.get_f_parameter(formats=['geojson','json','html'], default='geojson'),
+                parameters.get_features_datetime_parameter(),
+                parameters.get_features_limit_parameter(),
+                parameters.get_features_offset_parameter(),
+                parameters.get_features_skip_geometry_parameter(),
+                parameters.get_ref_schema("https://schemas.opengis.net/ogcapi/edr/1.0/openapi/parameters/radiusCoords.yaml"),
+                parameters.get_ref_schema("https://schemas.opengis.net/ogcapi/edr/1.0/openapi/parameters/within.yaml"),
+                parameters.get_ref_schema("https://schemas.opengis.net/ogcapi/edr/1.0/openapi/parameters/within-units.yaml"),
+                parameters.get_ref_schema("https://schemas.opengis.net/ogcapi/edr/1.0/openapi/parameters/parameter-name.yaml"),
+                parameters.get_ref_schema("https://schemas.opengis.net/ogcapi/edr/1.0/openapi/parameters/z.yaml"),
+            ],
+            "responses":{
+                "200":{
+                    "$ref":""
+                },
+                "400":{
+                    "$ref":""
+                },
+                "500":{
+                    "$ref":""
+                }
+            },
+        }
+    },
+    geoapi_schemas.AREA: {
+        "get":{
+            "description":"",
+            "operationId":"",
+            "parameters":[
+                parameters.get_f_parameter(formats=['geojson','json','html'], default='geojson'),
+                parameters.get_features_datetime_parameter(),
+                parameters.get_features_limit_parameter(),
+                parameters.get_features_offset_parameter(),
+                parameters.get_features_skip_geometry_parameter(),
+                parameters.get_ref_schema("https://schemas.opengis.net/ogcapi/edr/1.0/openapi/parameters/areaCoords.yaml"),
+                parameters.get_ref_schema("https://schemas.opengis.net/ogcapi/edr/1.0/openapi/parameters/parameter-name.yaml"),
+                parameters.get_ref_schema("https://schemas.opengis.net/ogcapi/edr/1.0/openapi/parameters/z.yaml"),
+            ],
+            "responses":{
+                "200":{
+                    "$ref":""
+                },
+                "400":{
+                    "$ref":""
+                },
+                "500":{
+                    "$ref":""
+                }
+            },
+        }
+    },
+    geoapi_schemas.CUBE: {
+        "get":{
+            "description":"",
+            "operationId":"",
+            "parameters":[
+                parameters.get_f_parameter(formats=['geojson','json','html'], default='geojson'),
+                parameters.get_features_datetime_parameter(),
+                parameters.get_features_limit_parameter(),
+                parameters.get_features_offset_parameter(),
+                parameters.get_features_skip_geometry_parameter(),
+                parameters.get_ref_schema("https://schemas.opengis.net/ogcapi/edr/1.0/openapi/parameters/bbox.yaml"),
+                parameters.get_ref_schema("https://schemas.opengis.net/ogcapi/edr/1.0/openapi/parameters/parameter-name.yaml"),
+                parameters.get_ref_schema("https://schemas.opengis.net/ogcapi/edr/1.0/openapi/parameters/cube-z.yaml"),
+            ],
+            "responses":{
+                "200":{
+                    "$ref":""
+                },
+                "400":{
+                    "$ref":""
+                },
+                "500":{
+                    "$ref":""
+                }
+            },
+        }
+    },
+    geoapi_schemas.TRAJECTORY: {
+        "get":{
+            "description":"",
+            "operationId":"",
+            "parameters":[
+                parameters.get_f_parameter(formats=['geojson','json','html'], default='geojson'),
+                parameters.get_features_datetime_parameter(),
+                parameters.get_features_limit_parameter(),
+                parameters.get_features_offset_parameter(),
+                parameters.get_features_skip_geometry_parameter(),
+                parameters.get_ref_schema("https://schemas.opengis.net/ogcapi/edr/1.0/openapi/parameters/trajectoryCoords.yaml"),
+                parameters.get_ref_schema("https://schemas.opengis.net/ogcapi/edr/1.0/openapi/parameters/parameter-name.yaml"),
+                parameters.get_ref_schema("https://schemas.opengis.net/ogcapi/edr/1.0/openapi/parameters/z.yaml"),
+            ],
+            "responses":{
+                "200":{
+                    "$ref":""
+                },
+                "400":{
+                    "$ref":""
+                },
+                "500":{
+                    "$ref":""
+                }
+            },
+        }
+    },
+    geoapi_schemas.CORRIDOR: {},
+    geoapi_schemas.LOCATIONS: {
+        "get":{
+            "description":"",
+            "operationId":"",
+            "parameters":[
+                parameters.get_f_parameter(formats=['geojson','json','html'], default='geojson'),
+                parameters.get_features_datetime_parameter(),
+                parameters.get_features_limit_parameter(),
+                parameters.get_features_offset_parameter(),
+                parameters.get_features_skip_geometry_parameter(),
+                parameters.get_ref_schema("https://schemas.opengis.net/ogcapi/edr/1.0/openapi/parameters/locationId.yaml"),
+                parameters.get_ref_schema("https://schemas.opengis.net/ogcapi/edr/1.0/openapi/parameters/parameter-name.yaml")
+            ],
+            "responses":{
+                "200":{
+                    "$ref":""
+                },
+                "400":{
+                    "$ref":""
+                },
+                "500":{
+                    "$ref":""
+                }
+            },
+        }
+    },
+    geoapi_schemas.INSTANCES: {}
 }
 
 base_json_doc = {
@@ -117,6 +286,7 @@ def generate_openapi_document():
     """
     base = deep_copy(base_json_doc)
     collections = Collection.objects.all()
+
     for collection in collections:
         items_path = f'/collections/{collection.model_name}/items'
         collection_object = deep_copy(collection_items_base)
@@ -141,6 +311,21 @@ def generate_openapi_document():
                 )
             )
         base["paths"][items_path] = collection_object
+
+        if collection.api_type == Collection.API_Types.EDR:
+            for edr_query in geoapi_schemas.SUPPORTED_QUERIES:
+                if edr_query != geoapi_schemas.ITEMS: # Items already added
+                    #TODO Add the different parameters
+                    edr_query_path = f'/collections/{collection.model_name}/{edr_query.lower()}'
+                    collection_object = deep_copy(edr_collection_base[edr_query])
+                
+                    # The Collection description
+                    collection_object['get']['description'] = f'{collection.description} - {edr_query} query.'
+
+                    # The Collection ID is the model name + _Collection
+                    collection_object['get']['operationId'] = f'{collection.model_name}_{edr_query.lower()}'
+
+                    base["paths"][edr_query_path] = collection_object
 
     return base
 

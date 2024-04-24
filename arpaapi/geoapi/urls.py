@@ -4,7 +4,7 @@ from geoapi import api as geoapi_api
 urlpatterns = [
     # Common
     path("", geoapi_api.landing),
-    path("conformance", geoapi_api.conformance),
+    path("conformance/", geoapi_api.conformance),
     path("api", geoapi_api.api),
 
     # Features

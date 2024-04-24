@@ -8,13 +8,14 @@ from geoapi import models as geoapi_models
 from geoapi.schemas import schemas
 
 CHARSET = ['utf-8']
-F_JSON = 'json'
-F_GEOJSON = 'geojson'
-F_HTML = 'html'
-F_JSONLD = 'jsonld'
-F_XML = 'xml'
-F_OPENAPI = 'application/vnd.oai.openapi+json'
-F_CSV = 'csv'
+
+F_JSON = ['json', 'application/json', 'text/json']
+F_GEOJSON = ['geojson']
+F_HTML = ['html']
+F_JSONLD = ['jsonld']
+F_XML = ['xml']
+F_OPENAPI = ['application/vnd.oai.openapi+json']
+F_CSV = ['csv']
 # F_GZIP = 'gzip'
 # F_PNG = 'png'
 # F_MVT = 'mvt'
@@ -31,15 +32,15 @@ FORMAT_TYPES_REVERSE = {
 }
 
 #: Formats allowed for ?f= requests (order matters for complex MIME types)
-FORMAT_TYPES = {
-    F_HTML: 'text/html',
-    F_JSONLD: 'application/ld+json',
-    F_JSON: 'application/json',
-    F_GEOJSON: 'application/geo+json',
-    F_XML: 'text/xml',
-    F_OPENAPI: 'application/vnd.oai.openapi+json',
-    F_CSV: 'text/csv'
-}
+def format_type(format):
+    if format in F_HTML: return 'text/html'
+    if format in F_JSONLD: return 'application/ld+json'
+    if format in F_JSON: return 'application/json'
+    if format in F_GEOJSON: return 'application/geo+json'
+    if format in F_XML: return 'text/xml'
+    if format in F_OPENAPI: return 'application/vnd.oai.openapi+json'
+    if format in F_CSV: return 'text/csv'
+    return None
 
 #: Locale used for system responses (e.g. exceptions)
 # SYSTEM_LOCALE = l10n.Locale('en', 'US')
@@ -219,10 +220,11 @@ def content_type_from_format(format: str):
     """
     Convert a simple string format type to a MIME format type.
     """
-    if format not in FORMAT_TYPES:
+    content_type = format_type(format)
+    if content_type is None:
         # If the format does not exist, return JSON
-        return F_JSON
-    return FORMAT_TYPES[format]
+        return format_type(F_JSON[0])
+    return content_type
 
 def get_format(request: HttpRequest, accepted_formats: list[str]):
     """
@@ -250,8 +252,10 @@ def get_format(request: HttpRequest, accepted_formats: list[str]):
 
     Finally, the format (in simple string) is returned.
     """
+    # Flat the list of formats
+    accepted_formats_flat =  [item for row in accepted_formats for item in row]
     # Accepted formats in MIME types.
-    accepted_formats_types = list(map(lambda f: FORMAT_TYPES[f], accepted_formats))
+    accepted_formats_types = list(map(lambda f: format_type(f), accepted_formats_flat))
 
     # Try to get format from the "f" query parameter
     format = request.GET.get('f', None)
@@ -284,21 +288,21 @@ def get_format(request: HttpRequest, accepted_formats: list[str]):
                 
                 # Sort descending the format list by "q" and position.
                 accept_order = sorted(accept_order, key=lambda item: item['q'], reverse=True)
-
                 for accept_candidate in accept_order:
                     # If an accepted format is found, take it and exit loop
                     if accept_candidate['value'] in accepted_formats_types:
-                        format = FORMAT_TYPES_REVERSE[accept_candidate['value']]; break
+                        format = accept_candidate['value']; break
                     
                     #wildcard format - take first in the list of accepted formats and exit loop.
                     elif accept_candidate['value'] == "*/*": 
-                        format = accepted_formats[0]; break
+                        format = accepted_formats_flat[0]; break
                             
             except Exception as ex:
                 # If any problem arises, return the preferred format...
-                return accepted_formats[0]
+                return accepted_formats_flat[0]
 
     # Return the format 
+    print(format)
     return format
 
 def deconstruct_url(request: HttpRequest):

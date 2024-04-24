@@ -53,11 +53,11 @@ def collection_by_id(request: HttpRequest, collectionId: str):
 
         # Query parameters
         
-        if f == utils.F_JSON:
+        if f in utils.F_JSON:
             headers['Content-Type'] = 'application/json; charset=utf-8'
             return geoapi_responses.response_json_200(serialized_collection)
         
-        elif f == utils.F_HTML:
+        elif f in utils.F_HTML:
             return geoapi_responses.response_html_200(request, serialized_collection, "collections/collection_by_id.html")
     
         else:

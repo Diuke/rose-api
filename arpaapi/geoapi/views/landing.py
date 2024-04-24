@@ -72,9 +72,9 @@ def landing(request: HttpRequest):
     landing_data = schemas.LandingSchema(title="ARPA API", description="ARPA Lombardia OGC API", links=links)
     serialized = json.dumps(landing_data.to_object())
 
-    if f == utils.F_HTML:
+    if f in utils.F_HTML:
         return responses.response_html_200(request, serialized, "landing/landing.html")
-    elif f == utils.F_JSON:
+    if f in utils.F_JSON:
         return responses.response_json_200(serialized)
     else:
         return responses.response_json_200(serialized)

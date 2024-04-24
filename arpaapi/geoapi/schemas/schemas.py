@@ -5,12 +5,14 @@ RADIUS = "radius"
 AREA = "area"
 CUBE = "cube"
 TRAJECTORY = "trajectory"
-CORRIDOR = "corridor"
+CORRIDOR = "corridor" #Not yet supported
 ITEMS = "items"
 LOCATIONS = "locations"
-INSTANCES = "instances"
+INSTANCES = "instances" #Not yet supported
+ 
 SUPPORTED_QUERIES = [
-    ITEMS, LOCATIONS
+    ITEMS, POSITION, RADIUS, AREA, CUBE, TRAJECTORY, 
+    LOCATIONS
 ]
 
 # Common Schemas

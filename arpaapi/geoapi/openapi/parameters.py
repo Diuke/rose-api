@@ -35,6 +35,8 @@ def get_features_bbox_parameter():
         }
     )
     return param
+def get_ref_schema(url):
+    return {"$ref": url}
 
 def get_features_datetime_parameter():
     suffix = "#/components/parameters/datetime"

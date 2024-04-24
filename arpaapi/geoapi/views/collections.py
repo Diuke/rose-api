@@ -46,12 +46,13 @@ def collections(request: HttpRequest):
     )
 
     # Alternate format links
-    for link_format in accepted_formats:
-        html_link_href_params = utils.replace_or_create_param(query_params, 'f', link_format)
-        html_link_href = f'{base_url}/collections?{html_link_href_params}'
-        links.append(
-            schemas.LinkSchema(href=html_link_href, rel="alternate", type=utils.content_type_from_format(link_format), title=f"This document as {link_format.upper()}.")
-        )
+    for formats in accepted_formats:
+        for link_format in formats:
+            html_link_href_params = utils.replace_or_create_param(query_params, 'f', link_format)
+            html_link_href = f'{base_url}/collections?{html_link_href_params}'
+            links.append(
+                schemas.LinkSchema(href=html_link_href, rel="alternate", type=utils.content_type_from_format(link_format), title=f"This document as {link_format.upper()}.")
+            )
 
     serializer = geoapi_serializers.CollectionsSerializer()
     options = {
@@ -62,12 +63,12 @@ def collections(request: HttpRequest):
     # Response objects
     headers = {}
     
-    if f == utils.F_JSON:
+    if f in utils.F_JSON:
         #response = json.dumps(resp)
         headers['Content-Type'] = 'application/json; charset=utf-8'
         return geoapi_responses.response_json_200(items_serialized=serialized_collections)
 
-    elif f == utils.F_HTML:
+    elif f in utils.F_HTML:
         return geoapi_responses.response_html_200(request, serialized_collections, "collections/collections.html")
     
     else:

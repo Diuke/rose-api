@@ -56,12 +56,13 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
     )
 
     # alternate format links
-    for link_format in accepted_formats:
-        html_link_href_params = utils.replace_or_create_param(query_params, 'f', link_format)
-        html_link_href = f'{base_url}/collections/{collection.model_name}/items?{html_link_href_params}'
-        links.append(
-            geoapi_schemas.LinkSchema(href=html_link_href, rel="alternate", type=utils.content_type_from_format(link_format), title=f"Items as {link_format.upper()}.")
-        )
+    for formats in accepted_formats:
+        for link_format in formats:
+            html_link_href_params = utils.replace_or_create_param(query_params, 'f', link_format)
+            html_link_href = f'{base_url}/collections/{collection.model_name}/items?{html_link_href_params}'
+            links.append(
+                geoapi_schemas.LinkSchema(href=html_link_href, rel="alternate", type=utils.content_type_from_format(link_format), title=f"Items as {link_format.upper()}.")
+            )
 
     # Common query parameters retrieval
     accepted_parameters = [
@@ -424,7 +425,8 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
             valid_coords, geometry = read_geometry(coords_param)
             if not valid_coords: 
                 return responses.response_bad_request_400(msg="Invalid Coordinates")
-            if not (geometry.geom_type == 'LINESTRING' or geometry.geom_type == 'MULTILINESTRING'):
+            print(geometry.geom_type)
+            if not (geometry.geom_type == 'LineString' or geometry.geom_type == 'MultiLineString'):
                 return responses.response_bad_request_400(msg="Invalid Geometry")
             
             # Get the geometry filter field
@@ -435,7 +437,8 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
 
         else: return responses.response_bad_request_400(msg="Parameter coords is mandatory.")
         
-        return responses.response_bad_request_400("Trajectory query not yet supported")
+        # Filter by the specified filters
+        items = utils.filter_by_dict(items, filter_dict)
     
     ##################################
     #########  CORRIDOR   ############
@@ -455,7 +458,28 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
         if has_invalid_params: 
             return responses.response_bad_request_400(f"Unknown Parameter(s): {str(invalid_params)}")
         
-        return responses.response_bad_request_400("Corridor query not yet supported")
+        # Retrieve values from parameters
+        coords_param = request.GET.get('coords', None)
+        z_param = request.GET.get('z', None)
+
+        x_resolution_param = request.GET.get('resolution-x', None)
+        z_resolution_param = request.GET.get('resolution-z', None)
+
+        corridor_height_param = request.GET.get('corridor-height', None)
+        height_units_param = request.GET.get('height-units', None)
+
+        corridor_width_param = request.GET.get('corridor-width', None)
+        width_units_param = request.GET.get('width-units', None)
+
+        parameter_name_param = request.GET.get('parameter-name', None)
+        crs_param = request.GET.get('crs', None)
+
+        filter_dict = {}
+
+        # TODO Implementation pending
+        
+        # Filter by the specified filters
+        return responses.response_bad_request_400(msg="Corridor query not implemented")
     
     ##################################
     ###########  ITEMS   #############
@@ -647,7 +671,7 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
         links.append(prev_link)
 
     # Return depending on format
-    if f == utils.F_GEOJSON:
+    if f in utils.F_GEOJSON:
         geometry_field = None if skip_geometry_param else collection.geometry_field
 
         # Select the serializer depending on the API type.
@@ -668,16 +692,16 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
         items_serialized = serializer.serialize(items, **options)
         return responses.response_geojson_200(items_serialized)
 
-    elif f == utils.F_JSON:
+    if f in utils.F_JSON:
         serializer = geoapi_serializers.SimpleJsonSerializer()
         items_serialized = serializer.serialize(items, fields=fields)
         return responses.response_json_200(items_serialized)
 
-    elif f == utils.F_CSV:
+    elif f in utils.F_CSV:
         #TODO Add support for CSV format
         return responses.response_bad_request_400("Format CSV not yet supported")
     
-    elif f == utils.F_HTML:
+    elif f in utils.F_HTML:
         serializer = geoapi_serializers.SimpleJsonSerializer()
         items_serialized = serializer.serialize(items, fields=fields)
 
