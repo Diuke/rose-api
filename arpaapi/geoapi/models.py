@@ -15,21 +15,33 @@ class GeoAPIConfiguration(models.Model):
 
 class Job(models.Model):
     class JobStatus(models.TextChoices):
-        COMPLETED = "COMPLETED", _("completed")
+        SUCCESSFUL = "SUCCESSFUL", _("successful")
+        ACCEPTED = "ACCEPTED", _("accepted")
         RUNNING = "RUNNING", _("running")
         FAILED = "FAILED", _("failed")
         DISMISSED = "DISMISSED", _("dismissed")
+    
+    class JobType(models.TextChoices):
+        SYNC = "SYNC", _("sync")
+        ASYNC = "ASYNC", _("async")
 
     job_id = models.UUIDField(primary_key=True)
     status = models.CharField(
         choices=JobStatus.choices,
-        max_length=9,
-        default=JobStatus.RUNNING,
+        max_length=10,
+        default=JobStatus.ACCEPTED,
     )
     progress = models.SmallIntegerField()
-    start_datetime = models.DateTimeField()
+    created_datetime = models.DateTimeField(null=True)
+    start_datetime = models.DateTimeField(null=True)
     end_datetime = models.DateTimeField(null=True)
     process_id = models.CharField(max_length=50)
+    type = models.CharField(
+        choices=JobStatus.choices,
+        null=True,
+        max_length=10,
+        default=None,
+    )
 
     result = models.CharField(max_length=200, null=True) # filename
 

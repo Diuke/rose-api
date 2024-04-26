@@ -44,16 +44,14 @@ def get_process_by_id(id: str) -> BaseProcess:
 
 def determine_execution_type(request: HttpRequest) -> str:
     try:
-        print(request.META)
         prefer_header = request.META.get("HTTP_PREFER", None)
-        print(prefer_header)
 
         if prefer_header is None:
             prefer_header = PREFER_SYNC
         
         if prefer_header == PREFER_ASYNC:
             return EXECUTE_ASYNC
-        elif prefer_header == PREFER_SYNC:
+        elif prefer_header == PREFER_SYNC: 
             return EXECUTE_SYNC
         else:
             return None

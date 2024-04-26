@@ -245,25 +245,6 @@ def map_columns(column_name):
     else: #no valid column
         return None 
 
-example_item = {
-    "sensor_id": 10431,
-    "sensor_type": "Ossidi di Azoto",
-    "measurement_unit": "µg/m³",
-    "station_id": 1264,
-    "station_name": "Sondrio v.Paribelli",
-    "altitude": 290,
-    "province": "SO",
-    "comune": "Sondrio",
-    "is_historical": False,
-    "date_start": "11/11/2008",
-    "date_stop": None,
-    "utm_north": 5113073.0,
-    "utm_east": 567873.0,
-    "latitude": 46.167852,
-    "longitude": 9.879209,
-    "location": Point(x=9.879209, y=46.167852)
-}
-
 def content_type_from_format(format: str):
     """
     Convert a simple string format type to a MIME format type.
@@ -449,5 +430,4 @@ def build_landing_links():
 def get_timestamp():
     # The test suite uses Java ZonedDateTime.parse() 
     timestamp = dt.datetime.now(tz=None).strftime("%Y-%m-%dT%H:%M:%S.%fz")
-    print(timestamp)
     return timestamp
