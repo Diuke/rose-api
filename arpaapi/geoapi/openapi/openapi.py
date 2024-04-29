@@ -3,6 +3,7 @@ from django.conf import settings
 from geoapi.models import Collection
 from geoapi.openapi import parameters, responses
 from geoapi.schemas import schemas as geoapi_schemas
+from geoapi import utils
 
 def deep_copy(obj: dict):
     return json.loads(json.dumps(obj))
@@ -209,7 +210,7 @@ base_json_doc = {
   },
   "servers": [
     {
-        "url": str(settings.BASE_API_URL),
+        "url": utils.get_base_url(),
         "description": "This API"
     }
   ],

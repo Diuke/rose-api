@@ -17,13 +17,13 @@ import os
 load_dotenv() 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+#BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '^a$1hag-+oer0tfn!ir*s71r$0320n*-cdziqj#g+5dnypg@k'
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG')
@@ -36,9 +36,13 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 200 * 1000000 #200 MB
 # Database maximum lenght of table name
 MAX_TABLE_NAME_LENGTH = 30
 # BASE_API_URL = 'http://localhost:8000/api/' # For linkbuilding - use trailing slash
-BASE_API_URL = os.getenv('BASE_API_URL') # For linkbuilding - remove trailing slash
 
-OUTPUT_DIR = 'C:/Users/juan-/Desktop/ARPAAPI_results'
+# OUTPUT_DIR = 'C:/Users/juan-/Desktop/ARPAAPI_results'
+
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
 
 # Application definition
 
@@ -133,11 +137,6 @@ USE_I18N = True
 
 USE_TZ = False
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.0/howto/static-files/
-
-STATIC_URL = 'static/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field

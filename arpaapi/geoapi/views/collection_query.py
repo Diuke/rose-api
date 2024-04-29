@@ -425,7 +425,7 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
             valid_coords, geometry = read_geometry(coords_param)
             if not valid_coords: 
                 return responses.response_bad_request_400(msg="Invalid Coordinates")
-            print(geometry.geom_type)
+
             if not (geometry.geom_type == 'LineString' or geometry.geom_type == 'MultiLineString'):
                 return responses.response_bad_request_400(msg="Invalid Geometry")
             
@@ -631,7 +631,6 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
     # Maximum 100.000 elements in request
     items_count = items.count()
     if limit > MAX_ELEMENTS and items_count > MAX_ELEMENTS:
-        print("too many elements")
         return responses.response_bad_request_400("Too many elements")
     if limit == -1: # Max number
         limit = MAX_ELEMENTS

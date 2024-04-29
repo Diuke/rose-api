@@ -24,7 +24,7 @@ def collection_by_id(request: HttpRequest, collectionId: str):
         
         collection_model_name = collection.first().model_name
         base_url, path, query_params = utils.deconstruct_url(request)
-        base_url:str = str(settings.BASE_API_URL)
+        base_url:str = utils.get_base_url()
 
         # Format of the response
         accepted_formats = [

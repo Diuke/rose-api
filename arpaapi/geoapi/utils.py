@@ -103,6 +103,13 @@ DEFAULT_CRS_LIST = [
 DEFAULT_CRS = 'http://www.opengis.net/def/crs/OGC/1.3/CRS84'
 DEFAULT_STORAGE_CRS = DEFAULT_CRS
 
+def get_base_url():
+    try:
+        base_url = geoapi_models.GeoAPIConfiguration.objects.first()
+        return base_url.base_url
+    except Exception as ex:
+        return ""
+
 def filter_by_dict(items: BaseManager[any], query: dict):
     items = items.filter(**query)
     return items
@@ -188,7 +195,6 @@ def process_datetime_interval(datetime_string: str):
     start_date = None
     end_date = None
     dates_split = datetime_string.split("/") 
-    print(dates_split)
 
     # if only one date
     if len(dates_split) == 1:
@@ -301,7 +307,6 @@ def get_format(request: HttpRequest, accepted_formats: list[str]):
                 return accepted_formats_flat[0]
 
     # Return the format 
-    print(format)
     return format
 
 def deconstruct_url(request: HttpRequest):
@@ -386,13 +391,13 @@ def build_landing_links():
     """
     links = []
 
-    base_url = str(settings.BASE_API_URL)
+    base_url = get_base_url()
     landing_link_json = f'{base_url}?f=json'
     links.append(
         schemas.LinkSchema(href=landing_link_json, rel="root", type=content_type_from_format('json'), title="Landing page of this server as JSON.")
     )
 
-    base_url = str(settings.BASE_API_URL)
+    base_url = get_base_url()
     landing_link_html = f'{base_url}?f=html'
     links.append(
         schemas.LinkSchema(href=landing_link_html, rel="root", type=content_type_from_format('html'), title="Landing page of this server as HTML.")

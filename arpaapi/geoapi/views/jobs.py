@@ -21,7 +21,7 @@ def jobs(request: HttpRequest):
     # Get the format using the "f" parameter or content negotiation with ACCEPT header.
     f = utils.get_format(request=request, accepted_formats=accepted_formats)
 
-    base_url:str = str(settings.BASE_API_URL)
+    base_url:str = utils.get_base_url()
     _, path, query_params = utils.deconstruct_url(request)
 
     job_list = geoapi_models.Job.objects.all()

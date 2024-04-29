@@ -54,7 +54,7 @@ def build_collection_object(obj: Collection, links: list[schemas.LinkSchema] = [
     """
 
     # TODO Build the links for each collection here...
-    base_url:str = str(settings.BASE_API_URL)
+    base_url = utils.get_base_url()
     obj_links = links.copy()
 
     # Collection linkbuilding

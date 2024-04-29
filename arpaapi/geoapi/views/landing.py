@@ -11,7 +11,7 @@ def landing(request: HttpRequest):
 
     f = utils.get_format(request=request, accepted_formats=accepted_formats)
 
-    base_url = str(settings.BASE_API_URL)
+    base_url = utils.get_base_url()
     _, path, query_params = utils.deconstruct_url(request)
 
     links = []

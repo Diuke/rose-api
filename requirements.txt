@@ -3,7 +3,9 @@ asgiref==3.7.2
 Django==5.0.1
 django-cors-headers==4.3.1
 djangorestframework==3.14.0
-psycopg==3.1.17
+gunicorn==22.0.0
+packaging==24.0
+psycopg[binary,pool]==3.1.17
 pydantic==2.6.3
 pydantic_core==2.16.3
 python-dotenv==1.0.1

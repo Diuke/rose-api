@@ -10,8 +10,6 @@ def api(request: HttpRequest):
     f = utils.get_format(request=request, accepted_formats=accepted_formats)
     serialized = json.dumps({})
 
-    print(f)
-
     if f in utils.F_HTML:
         return responses.response_html_200(request, serialized, "api/api.html")
     

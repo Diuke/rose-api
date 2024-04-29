@@ -83,7 +83,6 @@ def execute_process_by_id(request: HttpRequest, id: str):
                 "job_id": job_id 
             }
     except Exception as ex:
-        print("error in the execution")
         new_job.status = geoapi_models.Job.JobStatus.FAILED
         new_job.end_datetime = datetime.datetime.now()
         new_job.progress = 0

@@ -11,7 +11,19 @@ from django.dispatch import receiver
 from django.db import connection
 
 class GeoAPIConfiguration(models.Model):
-    base_url = models.CharField(_("Base GeoAPI URL"), max_length=400)
+    base_url = models.CharField(_("Base GeoAPI URL"), max_length=400, null=False, default="http://localhost:8000/api/")
+    max_table_name_length = models.SmallIntegerField(default=30, null=False)
+    output_dir = models.CharField(_("GeoAPI Output Directory path"), max_length=400, null=False, default="/tmp/arpaapi")
+
+    def __str__(self):
+        return "GeoAPI Configuration"
+    
+# Pre-save signal for checking if a configuration record already exists
+@receiver(pre_save, sender=GeoAPIConfiguration)
+def check_created_collection(sender, instance: GeoAPIConfiguration, **kwargs):
+    config = GeoAPIConfiguration.objects.all()
+    if len(config) > 0:
+        raise Exception("Only one configuration can exist")
 
 class Job(models.Model):
     class JobStatus(models.TextChoices):
@@ -114,7 +126,7 @@ def check_string(table_name: str):
     if not re.match(match_regex, table_name): return False
     return True
 
-# post_save signal for checking the table name before creating new table in post_save and avoid SQL injection
+# pre_save signal for checking the table name before creating new table in post_save and avoid SQL injection
 @receiver(pre_save, sender=Collection)
 def check_created_collection(sender, instance: Collection, **kwargs):
     new_table_name = instance.model_name
@@ -212,8 +224,6 @@ def sql_type_from_model_type(model_type: str, options: dict, creating=False):
         if 'primary_key' in options and options['primary_key'] == True: 
             sql_type = "SERIAL" if sql_type == "integer" else "BIGSERIAL"
             sql_type += " NOT NULL PRIMARY KEY"
-            
-            print(sql_type)
 
         if model_type == "ForeignKey":
             referenced_column = str(options['to'])

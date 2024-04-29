@@ -169,7 +169,6 @@ class Process(BaseProcess):
             
             where_filter += f" AND S.sensor_type IN {pollutant_list_str} "
 
-        print(where_filter)
         # Execute query
         with connection.cursor() as cursor:
             cursor.execute(
