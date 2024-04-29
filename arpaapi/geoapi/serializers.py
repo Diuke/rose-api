@@ -8,8 +8,8 @@ from django.core.serializers.json import Serializer as JsonBaseSerializer
 from django.contrib.gis.serializers.geojson import Serializer as GeoJSONBaseSerializer
 from django.contrib.gis.gdal import CoordTransform, SpatialReference
 from django.conf import settings
-from geoapi.models import Collection
-from geoapi.schemas import schemas
+from geoapi.models import Collection, Job
+from geoapi.schemas import schemas, process_schemas
 from geoapi import utils
 
 def _extract_geometry(serializer, obj):
@@ -383,3 +383,20 @@ class SingleFeatureGeoJSONSerializer(GeoJSONBaseSerializer):
         # Add the links at the end
         data["links"] = links_list
         return data
+    
+class JobsSerializer(JsonBaseSerializer):
+    def get_dump_object(self, obj):
+        data: Job = obj
+        job = process_schemas.JobSchema(
+            job_id=str(data.pk),
+            status=data.status,
+            process_id=data.process_id,
+            progress=data.progress,
+            created_datetime=data.created_datetime,
+            start_datetime=data.start_datetime,
+            end_datetime=data.end_datetime,
+            result=data.result,
+            type=data.type,
+            links=[],
+        )
+        return job.to_object()

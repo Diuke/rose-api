@@ -20,12 +20,23 @@ class Process(BaseProcess):
             "value"
         ]
 
-        self.input = [
+        self.inputs = [
             {
                 "name": "name",
                 "type": str
             }
         ]
+
+        self.outputs = [
+            {
+                "example-output": {
+                    "format": { "mediaType": "application/json" },
+                    "transmissionMode": "value"
+                }
+            }
+        ]
+
+        self.response = "document"
     
 
     def main(self, input: object):

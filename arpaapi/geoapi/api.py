@@ -20,6 +20,9 @@ from geoapi.views.collection_query import collection_query as geoapi_collection_
 from geoapi.views.processes import processes as geoapi_processes
 from geoapi.views.process_by_id import process_by_id as geoapi_process_by_id
 from geoapi.views.execute_process_by_id import execute_process_by_id as geoapi_execute_process_by_id
+from geoapi.views.jobs import jobs as geoapi_jobs
+from geoapi.views.job_by_id import job_by_id as geoapi_job_by_id
+from geoapi.views.job_results_by_id import job_results_by_id as geoapi_job_results_by_id
 
 #############################################
 #                 Common                    #
@@ -130,8 +133,7 @@ def jobs(request: HttpRequest):
 
     Documentation
     """
-    pass
-    #return geoapi_collection_query(request, collectionId, query)
+    return geoapi_jobs(request)
 
 @require_http_methods(["GET", "DELETE"])
 def job_by_id(request: HttpRequest, jobId: str):
@@ -140,8 +142,7 @@ def job_by_id(request: HttpRequest, jobId: str):
 
     Documentation
     """
-    pass
-    #return geoapi_collection_query(request, collectionId, query)
+    return geoapi_job_by_id(request, jobId)
 
 @require_http_methods(["GET"])
 def job_result_by_id(request: HttpRequest, jobId: str):
@@ -150,5 +151,4 @@ def job_result_by_id(request: HttpRequest, jobId: str):
 
     Documentation
     """
-    pass
-    #return geoapi_processes(request)
+    return geoapi_job_results_by_id(request, jobId)

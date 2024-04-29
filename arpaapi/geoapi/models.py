@@ -13,6 +13,39 @@ from django.db import connection
 class GeoAPIConfiguration(models.Model):
     base_url = models.CharField(_("Base GeoAPI URL"), max_length=400)
 
+class Job(models.Model):
+    class JobStatus(models.TextChoices):
+        SUCCESSFUL = "SUCCESSFUL", _("successful")
+        ACCEPTED = "ACCEPTED", _("accepted")
+        RUNNING = "RUNNING", _("running")
+        FAILED = "FAILED", _("failed")
+        DISMISSED = "DISMISSED", _("dismissed")
+    
+    class JobType(models.TextChoices):
+        SYNC = "SYNC", _("sync")
+        ASYNC = "ASYNC", _("async")
+
+    job_id = models.UUIDField(primary_key=True)
+    status = models.CharField(
+        choices=JobStatus.choices,
+        max_length=10,
+        default=JobStatus.ACCEPTED,
+    )
+    progress = models.SmallIntegerField()
+    created_datetime = models.DateTimeField(null=True)
+    start_datetime = models.DateTimeField(null=True)
+    end_datetime = models.DateTimeField(null=True)
+    process_id = models.CharField(max_length=50)
+    type = models.CharField(
+        choices=JobStatus.choices,
+        null=True,
+        max_length=10,
+        default=None,
+    )
+
+    result = models.CharField(max_length=200, null=True) # filename
+
+
 class Collection(models.Model):
     """
     Collection model. 
@@ -245,84 +278,3 @@ def get_model(collection: Collection):
     model = type(collection.model_name, (models.Model,), attrs)
     return model
     
-"""
-# GeoJSON enabled
-class AirQualitySensor(models.Model):
-    sensor_id = models.IntegerField(unique=True, primary_key=True)
-    sensor_type = models.CharField(max_length=30)
-    measurement_unit = models.CharField(max_length=5)
-    station_id = models.IntegerField()
-    station_name = models.CharField(max_length=60)
-    altitude = models.IntegerField(null=True)
-    province = models.CharField(max_length=2)
-    comune = models.CharField(max_length=30)
-    is_historical = models.BooleanField()
-    date_start = models.DateField(null=True)
-    date_stop = models.DateField(null=True)
-    utm_north = models.DecimalField(decimal_places=4, max_digits=11) # 00000000000.0000
-    utm_east = models.DecimalField(decimal_places=4, max_digits=10) # 0000000000.0000
-    latitude = models.DecimalField(decimal_places=4, max_digits=8) # 0000.0000
-    longitude = models.DecimalField(decimal_places=4, max_digits=9) # 00000.0000
-    location = gis_models.PointField()    
-
-    class Meta():
-        verbose_name_plural = "Air Quality Sensors"
-
-class AirQualityMeasurement(models.Model):
-    #IdSensore,Data,Valore,Stato,idOperatore 
-    #size: 8+8+10+4 = 30 bytes 
-    sensor_id = models.ForeignKey(AirQualitySensor, on_delete=models.CASCADE, null=True)
-    date = models.DateTimeField()
-    value = models.DecimalField(decimal_places=4, max_digits=10) # 000000.0000
-    # Stato not necessary. Non valid status will not be saved.
-    # idOperatore not saved as it is always 1.
-
-    # If EDR, must implement the location property pointing to the location for /locations query
-    @property
-    def location(self):
-        return self.sensor_id.location
-
-    class Meta():
-        verbose_name_plural = "Air Quality Measurements"
-
-class MeteoSensor(models.Model):
-    sensor_id = models.IntegerField(unique=True, primary_key=True)
-    sensor_type = models.CharField(max_length=30)
-    measurement_unit = models.CharField(max_length=5, null=True)
-    station_id = models.IntegerField()
-    station_name = models.CharField(max_length=60)
-    altitude = models.IntegerField(null=True)
-    province = models.CharField(max_length=2)
-    is_historical = models.BooleanField(default=False)
-    date_start = models.DateField(null=True)
-    date_stop = models.DateField(null=True)
-    utm_north = models.DecimalField(decimal_places=4, max_digits=11) # 00000000000.0000
-    utm_east = models.DecimalField(decimal_places=4, max_digits=10) # 0000000000.0000
-    latitude = models.DecimalField(decimal_places=4, max_digits=8, default=0) # 0000.0000
-    longitude = models.DecimalField(decimal_places=4, max_digits=9, default=0) # 00000.0000
-    location = gis_models.PointField(null=True, default=None)
-
-    class Meta():
-        verbose_name_plural = "Meteo Sensors"
-
-class MeteoMeasurement(models.Model):
-    #IdSensore,Data,Valore,Stato,idOperatore 
-    #size: 8+8+10+4 = 30 bytes 
-    sensor_id = models.ForeignKey(MeteoSensor, on_delete=models.CASCADE, null=True)
-    date = models.DateTimeField()
-    # Values depend on: LEGENDA: -9999 = dato mancante; 888, 8888 = direzione vento variabile; 777, 7777 = calma (solo per direzione di vento)
-    value = models.DecimalField(decimal_places=4, max_digits=10) # 000000.0000 
-    # Stato depends on: LEGENDA: VA, VV = dato valido NA, NV, NC = dato invalido NI = dato incerto ND = dato non disponibile
-    status = models.CharField(max_length=2)
-    # idOperatore depends on: LEGENDA: 1: Valore medio 3: Valore massimo 4: Valore cumulato (per la pioggia)
-    operative_id = models.SmallIntegerField()
-
-    # If EDR, must implement the location property pointing to the location for /locations query
-    @property
-    def location(self):
-        return self.sensor_id.location
-
-    class Meta():
-        verbose_name_plural = "Meteorological Measurements"
-
-"""

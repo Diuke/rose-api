@@ -86,4 +86,8 @@ def response_not_acceptable_406(msg=""):
     return HttpResponse(msg, status=406)
 
 def response_server_error_500(msg=""):
-    return HttpResponse(msg, status=500)
+    error_message = {
+        "error": 500,
+        "message": msg 
+    }
+    return HttpResponse(json.dumps(error_message), status=500)

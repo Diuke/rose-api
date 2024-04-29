@@ -215,7 +215,6 @@ def process_datetime_interval(datetime_string: str):
     
     return start_date, end_date
 
-
 def content_type_from_format(format: str):
     """
     Convert a simple string format type to a MIME format type.
@@ -404,5 +403,4 @@ def build_landing_links():
 def get_timestamp():
     # The test suite uses Java ZonedDateTime.parse() 
     timestamp = dt.datetime.now(tz=None).strftime("%Y-%m-%dT%H:%M:%S.%fz")
-    print(timestamp)
     return timestamp

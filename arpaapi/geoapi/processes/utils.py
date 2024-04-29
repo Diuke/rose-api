@@ -1,5 +1,13 @@
 from pkgutil import iter_modules, ModuleInfo, walk_packages, get_data
 import geoapi.processes.processes as geoapi_processes
+from django.http import HttpRequest
+
+PREFER_ASYNC = "respond-async"
+PREFER_SYNC = "respond-sync"
+
+EXECUTE_SYNC = "sync-execute"
+EXECUTE_ASYNC = "async-execute"
+EXECUTE_DISMISS = "dismiss"
 
 class BaseProcess():
     def __init__(self):
@@ -10,7 +18,9 @@ class BaseProcess():
         self.keywords = []
         self.jobControlOptions = []
         self.outputTransmission = []
-        self.input = []
+        self.inputs = []
+        self.outputs = []
+        self.response = ""
 
     def main(self, params):
         pass
@@ -31,3 +41,22 @@ def get_process_by_id(id: str) -> BaseProcess:
         if id == p.id:
             return p
     return None
+
+def determine_execution_type(request: HttpRequest) -> str:
+    try:
+        prefer_header = request.META.get("HTTP_PREFER", None)
+
+        if prefer_header is None:
+            prefer_header = PREFER_SYNC
+        
+        if prefer_header == PREFER_ASYNC:
+            return EXECUTE_ASYNC
+        elif prefer_header == PREFER_SYNC: 
+            return EXECUTE_SYNC
+        else:
+            return None
+    except:
+        pass
+
+    # By default, return sync
+    return EXECUTE_SYNC
