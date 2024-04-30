@@ -136,7 +136,7 @@ def paginate(items: BaseManager[any], limit: int | None, offset: int):
         if (offset+limit) > number_matched: limit = number_matched - offset
         items = items[offset:(offset+limit)]
 
-    number_returned = len(items)
+    number_returned = items.count()
     return items, number_returned, number_matched 
 
 def filter_datetime(items: BaseManager[any], start_date: dt.datetime, end_date: dt.datetime, datetime_field: str):
