@@ -1,0 +1,10 @@
+<h1>Landing Page</h1>
+<h3>{{ data.title }}</h3>
+<h3>{{ data.description }}</h3>
+
+<ul>
+    {% for link in data.links %}
+        <li>{{ link.title }} - {{ link.href }}</li>
+    {% endfor %}
+</ul>
+
