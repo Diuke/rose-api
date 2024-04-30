@@ -9,5 +9,5 @@ python3 manage.py createsuperuser \
     --email $DJANGO_SUPERUSER_EMAIL
 python3 manage.py setup
 
-(gunicorn arpaapi.wsgi -w 3 -b 0.0.0.0:8001) &
+(gunicorn roseapi.wsgi -w 3 -b 0.0.0.0:8001) &
 nginx -g "daemon off;"
