@@ -91,8 +91,12 @@ def execute_process_by_id(request: HttpRequest, id: str):
         return geoapi_responses.response_server_error_500(msg="Execution Failed")
 
     # Save result to file
-    output_dir = settings.OUTPUT_DIR
+    config = geoapi_models.GeoAPIConfiguration.objects.first()
+    output_dir = config.output_dir
     output_file = f'{output_dir}/{job_id}.json'
+
+    with open(output_file, 'w') as fp:
+        json.dump(result, fp, default=str)
 
     new_job.status = geoapi_models.Job.JobStatus.SUCCESSFUL
     new_job.progress = 100

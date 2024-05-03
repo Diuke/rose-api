@@ -14,6 +14,7 @@ RUN ln -sf /dev/stdout /var/log/nginx/access.log \
 COPY /roseapi .
 COPY ./requirements.txt .
 COPY ./server_start.sh .
+RUN mkdir -p /results
 
 RUN python -m pip install --upgrade pip && \
     pip3 install -r requirements.txt 

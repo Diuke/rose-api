@@ -13,7 +13,7 @@ from django.db import connection
 class GeoAPIConfiguration(models.Model):
     base_url = models.CharField(_("Base GeoAPI URL"), max_length=400, null=False, default="http://localhost:8000/api/")
     max_table_name_length = models.SmallIntegerField(default=30, null=False)
-    output_dir = models.CharField(_("GeoAPI Output Directory path"), max_length=400, null=False, default="/tmp/roseapi")
+    output_dir = models.CharField(_("GeoAPI Output Directory path"), max_length=400, null=False, default="/results") # Default Docker folder
 
     def __str__(self):
         return "GeoAPI Configuration"

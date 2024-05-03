@@ -18,8 +18,9 @@ def job_results_by_id(request: HttpRequest, id: str):
     if job:
         if job.status == geoapi_models.Job.JobStatus.SUCCESSFUL:
             # load file and return it as json
-            results_dir = settings.OUTPUT_DIR
-            results_file = f'{results_dir}/{id}.json'
+            config = geoapi_models.GeoAPIConfiguration.objects.first()
+            output_dir = config.output_dir
+            results_file = f'{output_dir}/{id}.json'
 
             result_data = None
             with open(results_file, 'r') as result:

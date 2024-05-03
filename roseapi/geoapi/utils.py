@@ -305,6 +305,10 @@ def get_format(request: HttpRequest, accepted_formats: list[str]):
             except Exception as ex:
                 # If any problem arises, return the preferred format...
                 return accepted_formats_flat[0]
+        else:
+            # If there is no Accept header:
+            # By default, return the prefered format by the accepted_formats parameter
+            format = accepted_formats_flat[0]
 
     # Return the format 
     return format
