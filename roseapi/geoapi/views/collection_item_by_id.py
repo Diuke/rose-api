@@ -39,17 +39,18 @@ def collection_item_by_id(request: HttpRequest, collectionId: str, featureId: in
     # alternate format links
     for formats in accepted_formats:
         for link_format in formats:
-            html_link_href_params = utils.replace_or_create_param(query_params, 'f', link_format)
-            html_link_href = f'{base_url}/collections/{collection.model_name}/items?{html_link_href_params}'
-            links.append(
-                geoapi_schemas.LinkSchema(href=html_link_href, rel="alternate", type=utils.content_type_from_format(link_format), title=f"Items as {link_format.upper()}.")
-            )
+            if "/" not in link_format:
+                html_link_href_params = utils.replace_or_create_param(query_params, 'f', link_format)
+                html_link_href = f'{base_url}/collections/{collection.model_name}/items?{html_link_href_params}'
+                links.append(
+                    geoapi_schemas.LinkSchema(href=html_link_href, rel="alternate", type=utils.content_type_from_format(link_format), title=f"Items as {link_format.upper()}.")
+                )
 
     item_feature_id = featureId
     item = collection_model.objects.filter(pk=item_feature_id)
     fields = collection.display_fields.split(",")
 
-    if f in 'geojson':
+    if f in utils.F_GEOJSON:
         serializer = geoapi_serializers.SingleFeatureGeoJSONSerializer()
         geometry_field = collection.geometry_field
         options = {
@@ -60,7 +61,7 @@ def collection_item_by_id(request: HttpRequest, collectionId: str, featureId: in
         items_serialized = serializer.serialize(item, **options)
         return responses.response_geojson_200(items_serialized)
 
-    elif f in 'json':
+    elif f in utils.F_JSON:
         serializer = geoapi_serializers.SingleFeatureJSONSerializer()
         options = {
             "links": links,
@@ -69,7 +70,7 @@ def collection_item_by_id(request: HttpRequest, collectionId: str, featureId: in
         items_serialized = serializer.serialize(item, **options)
         return responses.response_json_200(items_serialized)
     
-    elif f in 'html':
+    elif f in utils.F_HTML:
         #TODO Add render for HTML format
         return responses.response_bad_request_400("Format HTML not yet supported")
     

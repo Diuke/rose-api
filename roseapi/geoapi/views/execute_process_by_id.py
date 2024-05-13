@@ -20,7 +20,7 @@ def execute_process_by_id(request: HttpRequest, id: str):
         utils.F_JSON, utils.F_GEOJSON, utils.F_CSV
     ]
     f = utils.get_format(request=request, accepted_formats=accepted_formats)
-    
+
     # Get the specific process by the id
     process_module = processes_utils.get_process_by_id(id)
 

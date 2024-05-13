@@ -28,7 +28,7 @@ def collection_by_id(request: HttpRequest, collectionId: str):
 
         # Format of the response
         accepted_formats = [
-            utils.F_JSON, utils.F_HTML
+            utils.F_JSON, utils.F_HTML, utils.F_GEOJSON
         ]
         f = utils.get_format(request=request, accepted_formats=accepted_formats)
 
@@ -53,7 +53,7 @@ def collection_by_id(request: HttpRequest, collectionId: str):
 
         # Query parameters
         
-        if f in utils.F_JSON:
+        if f in utils.F_JSON or f in utils.F_GEOJSON:
             headers['Content-Type'] = 'application/json; charset=utf-8'
             return geoapi_responses.response_json_200(serialized_collection)
         

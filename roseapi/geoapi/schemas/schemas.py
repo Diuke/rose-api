@@ -145,6 +145,7 @@ class EDRCollectionSchema(BaseModel):
             "parameter_names": {},
             "output_formats": self.output_formats,
             "crs": self.crs,
+
         }    
         return obj
 

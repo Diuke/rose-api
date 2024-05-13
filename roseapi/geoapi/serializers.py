@@ -78,7 +78,7 @@ def build_collection_object(obj: Collection, links: list[schemas.LinkSchema] = [
     # Alternative Links
     alt_format_list = ['json','html'] #TODO dynamically build this with collection formats
     for alt_format in alt_format_list:
-        alt_link = f'{base_url}/collections/{obj.model_name}/?f={alt_format}'
+        alt_link = f'{base_url}/collections/{obj.model_name}?f={alt_format}'
         obj_links.append(
             schemas.LinkSchema(href=alt_link, rel="alternate", type=utils.content_type_from_format(alt_format), title=f"Collection as {alt_format.upper()}")
         )

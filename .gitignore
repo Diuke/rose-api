@@ -1,5 +1,6 @@
 /notebooks/aq_data/*.csv
 /notebooks/meteo_data/*.csv
+/notebooks
 __pycache__
 .ipynb_checkpoints
 .venv

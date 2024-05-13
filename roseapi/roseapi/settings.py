@@ -36,8 +36,6 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 200 * 1000000 #200 MB
 # Database maximum lenght of table name
 # BASE_API_URL = 'http://localhost:8000/api/' # For linkbuilding - use trailing slash
 
-# OUTPUT_DIR = 'C:/Users/juan-/Desktop/roseapi_results'
-
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
@@ -145,3 +143,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # CORS Configuration
 CORS_ALLOW_ALL_ORIGINS = True
 ALLOWED_HOSTS = ["*"]
+
+CSRF_TRUSTED_ORIGINS = ["http://127.0.0.1:8000"]

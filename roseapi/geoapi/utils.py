@@ -10,8 +10,8 @@ from geoapi.schemas import schemas
 CHARSET = ['utf-8']
 
 F_JSON = ['json', 'application/json', 'text/json']
-F_GEOJSON = ['geojson']
-F_HTML = ['html']
+F_GEOJSON = ['geojson', 'application/geo+json']
+F_HTML = ['html', 'text/html']
 F_JSONLD = ['jsonld']
 F_XML = ['xml']
 F_OPENAPI = ['application/vnd.oai.openapi+json']

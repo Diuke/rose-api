@@ -35,6 +35,10 @@ class Process(BaseProcess):
                 "type": str
             },
             {
+                "name": "skip-geometry",
+                "type": bool
+            },
+            {
                 "name": "datetime",
                 "type": str
             },
@@ -45,6 +49,10 @@ class Process(BaseProcess):
             {
                 "name": "pollutant-list",
                 "type": list[str]
+            },
+            {
+                "name": "bbox",
+                "type": list[float]
             }
         ]
 
@@ -117,6 +125,16 @@ class Process(BaseProcess):
         else: 
             pollutant_list = None
 
+        if 'skip-geometry' in input:
+            skip_geometry = input['skip-geometry'] 
+        else: 
+            skip_geometry = True # By default do not include geometry
+
+        if 'bbox' in input:
+            bbox = input['bbox'] 
+        else: 
+            bbox = None
+
         model_name = "airqualitymeasurement"
         collection = None
         try:
@@ -169,6 +187,10 @@ class Process(BaseProcess):
             
             where_filter += f" AND S.sensor_type IN {pollutant_list_str} "
 
+        if bbox:
+            bbox_string = f'{bbox[0]}, {bbox[1]}, {bbox[2]}, {bbox[3]}'
+            where_filter += f" AND ST_Intersects(S.location, ST_MakeEnvelope({bbox_string}, '4326'))"
+
         # Execute query
         with connection.cursor() as cursor:
             cursor.execute(
@@ -177,6 +199,7 @@ class Process(BaseProcess):
                     DATE_TRUNC(%s, M.date) AS date,
                     {aggregation}(M.value) AS value,
                     CAST(avg(M.sensor_id) AS INT) as sensor
+                    {"" if skip_geometry else ", ST_AsText(S.location) as location"}
                 FROM
                     public.geoapi_airqualitymeasurement as M
                 INNER JOIN 
@@ -186,7 +209,7 @@ class Process(BaseProcess):
                 WHERE
                     {where_filter}
                 GROUP BY
-                    DATE_TRUNC(%s, M.date), M.sensor_id
+                    DATE_TRUNC(%s, M.date), M.sensor_id {"" if skip_geometry else ", S.location"}
                 ''',
                 [time, time]
             )

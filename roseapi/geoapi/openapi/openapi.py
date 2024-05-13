@@ -8,6 +8,28 @@ from geoapi import utils
 def deep_copy(obj: dict):
     return json.loads(json.dumps(obj))
 
+collection_base = {
+    "get":{
+        "description":"",
+        "operationId":"",
+        "parameters":[
+            parameters.get_f_parameter(formats=['geojson','json','html'], default='geojson')
+        ],
+        "responses":{
+            "200":{
+                "$ref":""
+            },
+            "400":{
+                "$ref":""
+            },
+            "500":{
+                "$ref":""
+            }
+        },
+        "summary":"",
+    }
+}
+
 collection_items_base = {
     "get":{
         "description":"",
@@ -30,7 +52,7 @@ collection_items_base = {
             "500":{
                 "$ref":""
             }
-        },
+        }
     }
 }
 
@@ -289,6 +311,15 @@ def generate_openapi_document():
     collections = Collection.objects.all()
 
     for collection in collections:
+        collection_path = f'/collections/{collection.model_name}'
+        collection_base_object = deep_copy(collection_base)
+        # The Collection description
+        collection_base_object['get']['description'] = collection.description
+        # The Collection ID is the model name + _Collection
+        collection_base_object['get']['operationId'] = f'get{collection.model_name}Collection'
+        base["paths"][collection_path] = collection_base_object
+
+
         items_path = f'/collections/{collection.model_name}/items'
         collection_object = deep_copy(collection_items_base)
       
@@ -296,7 +327,7 @@ def generate_openapi_document():
         collection_object['get']['description'] = collection.description
 
         # The Collection ID is the model name + _Collection
-        collection_object['get']['operationId'] = f'{collection.model_name}'
+        collection_object['get']['operationId'] = f'get{collection.model_name}CollectionItems'
 
         # Build the query parameters options
         for filter_field in collection.filter_fields.split(','):

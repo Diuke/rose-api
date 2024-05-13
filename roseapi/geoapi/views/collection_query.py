@@ -27,7 +27,8 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
     model_name = collectionId
     collection = geoapi_models.Collection.objects.get(model_name=model_name)
     collection_model = geoapi_models.get_model(collection)
-    base_url, path, query_params = utils.deconstruct_url(request)
+    _, path, query_params = utils.deconstruct_url(request)
+    base_url:str = utils.get_base_url()
 
     # Check if the query type is allowed for the collection
     if not is_query_allowed_for_collection(collection, query):
@@ -58,11 +59,12 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
     # alternate format links
     for formats in accepted_formats:
         for link_format in formats:
-            html_link_href_params = utils.replace_or_create_param(query_params, 'f', link_format)
-            html_link_href = f'{base_url}/collections/{collection.model_name}/items?{html_link_href_params}'
-            links.append(
-                geoapi_schemas.LinkSchema(href=html_link_href, rel="alternate", type=utils.content_type_from_format(link_format), title=f"Items as {link_format.upper()}.")
-            )
+            if "/" not in link_format:
+                html_link_href_params = utils.replace_or_create_param(query_params, 'f', link_format)
+                html_link_href = f'{base_url}/collections/{collection.model_name}/items?{html_link_href_params}'
+                links.append(
+                    geoapi_schemas.LinkSchema(href=html_link_href, rel="alternate", type=utils.content_type_from_format(link_format), title=f"Items as {link_format.upper()}.")
+                )
 
     # Common query parameters retrieval
     accepted_parameters = [
@@ -630,7 +632,7 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
     # Pagination
     # Maximum 100.000 elements in request
     items_count = items.count()
-    if limit > MAX_ELEMENTS and items_count > MAX_ELEMENTS:
+    if limit > MAX_ELEMENTS:
         return responses.response_bad_request_400("Too many elements")
     if limit == -1: # Max number
         limit = MAX_ELEMENTS
@@ -650,7 +652,7 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
         next_params = query_params
         next_params = utils.replace_or_create_param(next_params, 'limit', str(next_limit))
         next_params = utils.replace_or_create_param(next_params, 'offset', str(next_offset))
-        next_link_href = f'{base_url}{path}?{next_params}'
+        next_link_href = f'{base_url}/collections/{collection.model_name}/{query}?{next_params}'
         next_link = geoapi_schemas.LinkSchema(
             href=next_link_href, rel='next', type=utils.content_type_from_format(f), title="Next page"
         )
@@ -663,7 +665,7 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
         prev_params = query_params
         prev_params = utils.replace_or_create_param(prev_params, 'limit', str(prev_limit))
         prev_params = utils.replace_or_create_param(prev_params, 'offset', str(prev_offset))
-        prev_link_href = f'{base_url}{path}?{prev_params}'
+        prev_link_href = f'{base_url}/collections/{collection.model_name}/{query}?{prev_params}'
         prev_link = geoapi_schemas.LinkSchema(
             href=prev_link_href, rel='prev', type=utils.content_type_from_format(f), title="Previous page"
         )
