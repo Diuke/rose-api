@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 from pathlib import Path
 import os
 
-load_dotenv() 
+load_dotenv(override=True) 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 #BASE_DIR = Path(__file__).resolve().parent.parent
@@ -88,6 +88,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'roseapi.wsgi.application'
 
+# CELERY
+# Celery Configuration Options
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL')
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases

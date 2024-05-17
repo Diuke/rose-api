@@ -24,7 +24,7 @@ def jobs(request: HttpRequest):
     base_url:str = utils.get_base_url()
     _, path, query_params = utils.deconstruct_url(request)
 
-    job_list = geoapi_models.Job.objects.all()
+    job_list = geoapi_models.Job.objects.all().order_by("-created_datetime")
     serializer = geoapi_serializers.JobsSerializer()
     serialized = serializer.serialize(job_list)
     

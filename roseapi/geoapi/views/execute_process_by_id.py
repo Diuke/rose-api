@@ -12,7 +12,6 @@ from geoapi.schemas import schemas
 from geoapi import utils
 
 from geoapi.processes import utils as processes_utils
-from geoapi.schemas.process_schemas import ProcessSchema, ProcessesSchema
 from geoapi.schemas.schemas import LinkSchema
 
 def execute_process_by_id(request: HttpRequest, id: str):
@@ -72,37 +71,38 @@ def execute_process_by_id(request: HttpRequest, id: str):
 
         else: 
             # RUN ASYNC
-            #TODO: Send to async processing
             new_job.status = geoapi_models.Job.JobStatus.RUNNING
             new_job.type = geoapi_models.Job.JobType.ASYNC
             new_job.start_datetime = datetime.datetime.now()
             new_job.save()
-            result = process_module.main(params)
+            
+            # open a thread and execute process there
+            process_id = id
+            processes_utils.execute_async.delay(str(new_job.pk), process_id, params)
+            
             response = {
                 "result": "ASYNC",
                 "job_id": job_id 
             }
+            serialized = json.dumps(response, default=str)
+            return geoapi_responses.response_json_200(serialized)
+        
+        output_file = processes_utils.save_to_file(result, job_id)
+
+        new_job.status = geoapi_models.Job.JobStatus.SUCCESSFUL
+        new_job.progress = 100
+        new_job.end_datetime = datetime.datetime.now()
+        new_job.result = output_file
+        new_job.save()
+
+        serialized = json.dumps(response, default=str)
+        return geoapi_responses.response_json_200(serialized)
+        
     except Exception as ex:
+        print(ex)
         new_job.status = geoapi_models.Job.JobStatus.FAILED
         new_job.end_datetime = datetime.datetime.now()
         new_job.progress = 0
         new_job.result = str(ex)
         new_job.save()
         return geoapi_responses.response_server_error_500(msg="Execution Failed")
-
-    # Save result to file
-    config = geoapi_models.GeoAPIConfiguration.objects.first()
-    output_dir = config.output_dir
-    output_file = f'{output_dir}/{job_id}.json'
-
-    with open(output_file, 'w') as fp:
-        json.dump(result, fp, default=str)
-
-    new_job.status = geoapi_models.Job.JobStatus.SUCCESSFUL
-    new_job.progress = 100
-    new_job.end_datetime = datetime.datetime.now()
-    new_job.result = output_file
-    new_job.save()
-
-    serialized = json.dumps(response, default=str)
-    return geoapi_responses.response_json_200(serialized)

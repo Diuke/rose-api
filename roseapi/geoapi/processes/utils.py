@@ -1,6 +1,10 @@
-from pkgutil import iter_modules, ModuleInfo, walk_packages, get_data
+import json
+import datetime
+from pkgutil import walk_packages
 import geoapi.processes.processes as geoapi_processes
 from django.http import HttpRequest
+from celery import shared_task
+from geoapi.models import GeoAPIConfiguration, Job
 
 PREFER_ASYNC = "respond-async"
 PREFER_SYNC = "respond-sync"
@@ -60,3 +64,36 @@ def determine_execution_type(request: HttpRequest) -> str:
 
     # By default, return sync
     return EXECUTE_SYNC
+
+def save_to_file(result, job_id):
+    """
+    Save a result to a file
+    """
+    config = GeoAPIConfiguration.objects.first()
+    output_dir = config.output_dir
+    output_file = f'{output_dir}/{job_id}.json'
+    with open(output_file, 'w') as fp:
+        json.dump(result, fp, default=str)
+    
+    return output_file
+
+@shared_task
+def execute_async(job_id: str, process_id: str, params):
+    print(job_id, process_id, params)
+    try:
+        job = Job.objects.get(pk=job_id)
+        process_module = get_process_by_id(process_id)
+
+        result = process_module.main(params)
+        output_file = save_to_file(result, job_id)
+        job.status = Job.JobStatus.SUCCESSFUL
+        job.progress = 100
+        job.end_datetime = datetime.datetime.now()
+        job.result = output_file
+        job.save()
+    except Exception as ex:
+        job.status = Job.JobStatus.FAILED
+        job.progress = 0
+        job.end_datetime = datetime.datetime.now()
+        job.result = str(ex)
+        job.save()

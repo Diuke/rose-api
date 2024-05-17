@@ -42,8 +42,8 @@ class JobSchema(BaseModel):
     start_datetime: dt.datetime | None
     end_datetime: dt.datetime | None
     created_datetime: dt.datetime | None
-    process_id: str
-    result: str
+    process_id: str 
+    result: str | None
     type: str
     links: list[LinkSchema]
 
