@@ -21,9 +21,11 @@ class GeoAPIConfiguration(models.Model):
 # Pre-save signal for checking if a configuration record already exists
 @receiver(pre_save, sender=GeoAPIConfiguration)
 def check_created_collection(sender, instance: GeoAPIConfiguration, **kwargs):
-    config = GeoAPIConfiguration.objects.count()
-    if config > 0:
-        raise Exception("Only one configuration can exist")
+    # Check if the instance has a primary key - Only one configuration can exist
+    if instance.pk is None:
+        config = GeoAPIConfiguration.objects.count()
+        if config > 0:
+            raise Exception("Only one configuration can exist")      
 
 class Job(models.Model):
     class JobStatus(models.TextChoices):

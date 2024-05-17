@@ -27,6 +27,9 @@ collection_base = {
             }
         },
         "summary":"",
+        "tags":[
+            "server"
+        ]
     }
 }
 
@@ -52,7 +55,11 @@ collection_items_base = {
             "500":{
                 "$ref":""
             }
-        }
+        },
+        "summary":"",
+        "tags":[
+            "server"
+        ]
     }
 }
 
@@ -82,6 +89,10 @@ edr_collection_base = {
                     "$ref":""
                 }
             },
+            "summary":"",
+            "tags":[
+                "server"
+            ]
         }
     },
     geoapi_schemas.RADIUS: {
@@ -111,6 +122,10 @@ edr_collection_base = {
                     "$ref":""
                 }
             },
+            "summary":"",
+            "tags":[
+                "server"
+            ]
         }
     },
     geoapi_schemas.AREA: {
@@ -138,6 +153,9 @@ edr_collection_base = {
                     "$ref":""
                 }
             },
+            "tags":[
+                "server"
+            ]
         }
     },
     geoapi_schemas.CUBE: {
@@ -165,6 +183,9 @@ edr_collection_base = {
                     "$ref":""
                 }
             },
+            "tags":[
+                "server"
+            ]
         }
     },
     geoapi_schemas.TRAJECTORY: {
@@ -192,6 +213,9 @@ edr_collection_base = {
                     "$ref":""
                 }
             },
+            "tags":[
+                "server"
+            ]
         }
     },
     geoapi_schemas.CORRIDOR: {},
@@ -219,6 +243,9 @@ edr_collection_base = {
                     "$ref":""
                 }
             },
+            "tags":[
+                "server"
+            ]
         }
     },
     geoapi_schemas.INSTANCES: {}
@@ -245,7 +272,10 @@ base_json_doc = {
             "200": responses.get_features_landing_response(),
             "400": responses.get_features_invalid_parameter_response(),
             "500": responses.get_features_server_error_response()
-        }
+        },
+        "tags":[
+            "server"
+        ]
       }
     },
     # "/api":{},
