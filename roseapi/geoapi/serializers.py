@@ -400,3 +400,29 @@ class JobsSerializer(JsonBaseSerializer):
             links=[],
         )
         return job.to_object()
+    
+class SingleJobSerializer(JsonBaseSerializer):
+    def _init_options(self):
+        super()._init_options()
+        self.links: list[schemas.LinkSchema] = self.json_kwargs.pop("links", [])
+
+    def start_serialization(self):
+        """
+        Start the serialization with an empty string. This serializer should receive 1 element only, so
+        The response should be a single JSON element. This prevents the creation of a list of 
+        jobs with a single element.
+        """
+        self._init_options()
+        self.stream.write("")
+
+    def end_serialization(self):
+        """
+        Finish the serialization with an empty string again.
+        """
+        self.stream.write("")
+
+    def get_dump_object(self, obj):
+        links_list = [ link.to_object() for link in self.links ]
+        data = self._current
+        data["links"] = links_list
+        return data

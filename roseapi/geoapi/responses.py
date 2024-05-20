@@ -13,11 +13,22 @@ def response_geojson_200(items_serialized):
         status=200
     )
 
-def response_json_200(items_serialized):
+def response_json_200(items_serialized=None, msg=None):
     headers = {}
     content_type = "application/json" #by default json
+
+    if items_serialized is not None:
+        resp = items_serialized
+    elif msg is not None:
+        resp = json.dumps({
+            "message": msg,
+            "status": 200
+        })
+    else:
+        resp = json.dumps({})
+
     return HttpResponse(
-        items_serialized, 
+        resp, 
         headers=headers, 
         content_type=content_type,
         status=200

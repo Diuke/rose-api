@@ -3,7 +3,10 @@ import datetime
 from pkgutil import walk_packages
 import geoapi.processes.processes as geoapi_processes
 from django.http import HttpRequest
-from celery import shared_task
+from celery.contrib.abortable import AbortableTask
+from celery.utils.log import get_task_logger
+from roseapi.celery import app
+
 from geoapi.models import GeoAPIConfiguration, Job
 
 PREFER_ASYNC = "respond-async"
@@ -77,9 +80,8 @@ def save_to_file(result, job_id):
     
     return output_file
 
-@shared_task
+@app.task()
 def execute_async(job_id: str, process_id: str, params):
-    print(job_id, process_id, params)
     try:
         job = Job.objects.get(pk=job_id)
         process_module = get_process_by_id(process_id)

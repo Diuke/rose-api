@@ -78,7 +78,11 @@ def execute_process_by_id(request: HttpRequest, id: str):
             
             # open a thread and execute process there
             process_id = id
-            processes_utils.execute_async.delay(str(new_job.pk), process_id, params)
+            print(str(new_job.pk), process_id, params)
+            processes_utils.execute_async.apply_async(
+                args=(str(new_job.pk), process_id, params), 
+                task_id=str(new_job.pk)
+            )
             
             response = {
                 "result": "ASYNC",

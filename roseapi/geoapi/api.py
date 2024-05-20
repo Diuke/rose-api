@@ -135,6 +135,7 @@ def jobs(request: HttpRequest):
     """
     return geoapi_jobs(request)
 
+@csrf_exempt
 @require_http_methods(["GET", "DELETE"])
 def job_by_id(request: HttpRequest, jobId: str):
     """
