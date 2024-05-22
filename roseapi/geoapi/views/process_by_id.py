@@ -10,7 +10,7 @@ from geoapi.schemas import schemas
 from geoapi import utils
 
 from geoapi.processes import utils as processes_utils
-from geoapi.schemas.process_schemas import ProcessSchema, ProcessesSchema
+from geoapi.schemas.process_schemas import ProcessSchema, ProcessesSchema, ProcessInput, ProcessOutput
 from geoapi.schemas.schemas import LinkSchema
 
 def process_by_id(request: HttpRequest, id: str):
@@ -45,13 +45,23 @@ def process_by_id(request: HttpRequest, id: str):
 
     # Get the specific process by the id
     process_module = processes_utils.get_process_by_id(id)
-    # Additional links
+    # Execution link
     links.append(LinkSchema(
-        href="",
-        title="",
-        rel="",
-        type=""
+        href=f"{base_url}/processes/{process_module.id}/execution",
+        rel="http://www.opengis.net/def/rel/ogc/1.0/execute",
+        title="Execute process"
     ))
+
+    inputs = {}
+    for key in process_module.inputs.keys():
+        print(process_module.inputs[key])
+        inputs[key] = ProcessInput(**process_module.inputs[key])
+
+    print()
+    outputs = {}
+    for key in process_module.outputs.keys():
+        print(process_module.outputs[key])
+        outputs[key] = ProcessOutput(**process_module.outputs[key])
 
     process_to_return = ProcessSchema(
         version=process_module.version,
@@ -61,10 +71,10 @@ def process_by_id(request: HttpRequest, id: str):
         keywords=process_module.keywords,
         links=links,
         jobControlOptions=process_module.jobControlOptions,
-        outputTransmission=process_module.outputTransmission
+        outputTransmission=process_module.outputTransmission,
+        inputs=inputs,
+        outputs=outputs
     )
-
-    # TODO Add inputs, outputs, and example
 
     serialized = json.dumps(process_to_return.to_object())
     return geoapi_responses.response_json_200(serialized)

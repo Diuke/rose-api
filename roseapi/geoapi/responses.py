@@ -34,6 +34,27 @@ def response_json_200(items_serialized=None, msg=None):
         status=200
     )
 
+def response_json_201(items_serialized=None, msg=None):
+    headers = {}
+    content_type = "application/json" #by default json
+
+    if items_serialized is not None:
+        resp = items_serialized
+    elif msg is not None:
+        resp = json.dumps({
+            "message": msg,
+            "status": 201
+        })
+    else:
+        resp = json.dumps({})
+
+    return HttpResponse(
+        resp, 
+        headers=headers, 
+        content_type=content_type,
+        status=201
+    )
+
 def response_openapi_200(api_doc_serialized):
     headers = {}
     content_type = "application/vnd.oai.openapi+json;version=3.0" # The OpenAPI media type has not been registered yet with IANA and may change.
@@ -66,10 +87,14 @@ def response_bad_request_400(msg="", wrong_param=""):
     headers = {}
     content_type = "application/json" #by default json
 
-    return_body = json.dumps({
+    response_body = {
         "error": msg,
         "status": 400
-    })
+    }
+    if wrong_param is not "":
+        response_body["parameter"] = wrong_param
+
+    return_body = json.dumps(response_body)
 
     return HttpResponse(
         return_body, 

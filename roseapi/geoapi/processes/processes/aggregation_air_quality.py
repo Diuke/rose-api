@@ -4,9 +4,11 @@ from geoapi.processes.utils import BaseProcess
 from geoapi import models as geoapi_models
 from django.db import connection
 from django.db.backends.utils import CursorWrapper
+from geoapi.processes.job_manager import JobManager
 
 class Process(BaseProcess):
     def __init__(self):
+        # Metadata
         self.id = "aggregation-air-quality"
         self.version = "1.0"
         
@@ -25,45 +27,67 @@ class Process(BaseProcess):
             "value"
         ]
 
-        self.inputs = [
-            {
-                "name": "aggregation-time-unit",
-                "type": str
+        self.inputs = {
+            "aggregation-time-unit": {
+                "title": "Aggregation time unit",
+                "description":'The time unit of the aggregation. Can be "day", "month", or "year"',
+                "type": str,
+                "minOccurs": 1,
+                "maxOccurs": 1
             },
-            {
-                "name": "aggregation-function",
-                "type": str
+            "aggregation-function": {
+                "title": "Aggregation function",
+                "description":'The aggregation function to use over the grouped values. Can be "AVG", "SUM", "MAX" or "MIN".',
+                "type": str,
+                "minOccurs": 1,
+                "maxOccurs": 1
             },
-            {
-                "name": "skip-geometry",
-                "type": bool
+            "skip-geometry": {
+                "title": "Skip Geometry",
+                "description":'Tells the process to return or not the associated geometry of the grouped values. If specified, the values will be grouped also by the location.',
+                "minOccurs": 1,
+                "maxOccurs": 1,
+                "type": bool,
             },
-            {
-                "name": "datetime",
-                "type": str
+            "datetime": {
+                "title": "Range of dates and times",
+                "description": 'The range of datetimes in which the aggregation takes place. The format is DD-MM-YYYYTHH:MM:SS and can be open interval (date/.. or ../date) or a closed interval (date/date).',
+                "type": str,
+                "minOccurs": 1,
+                "maxOccurs": 1
             },
-            {
-                "name": "sensor-list",
-                "type": list[int]
+            "sensor-list": {
+                "title": "Filter by list of sensors",
+                "description":'Optional. Filter by a list of specific sensors by their ID.',
+                "type": list[int],
+                "minOccurs": 0,
+                "maxOccurs": 1
             },
-            {
-                "name": "pollutant-list",
-                "type": list[str]
+            "pollutant-list": {
+                "title": "Filter by list of pollutants",
+                "description": 'Optional. Filter by a list of pollutants by their name.',
+                "type": list[str],
+                "minOccurs": 0,
+                "maxOccurs": 1
             },
-            {
-                "name": "bbox",
-                "type": list[float]
+            "bbox": {
+                "title": "Bounding Box",
+                "description": 'Optional. Filter by a bounding box. A bounding box is defined as list of numbers related to the coordinates min_lat,min_lon,max_lat,max_lon.',
+                "type": list[float],
+                "minOccurs": 0,
+                "maxOccurs": 1
             }
-        ]
+        }
 
-        self.outputs = [
-            {
-                "results": {
-                    "format": { "mediaType": "application/json" },
-                    "transmissionMode": "value"
-                }
+        self.outputs = {
+            "results": {
+                "title": "Aggregated dataset",
+                "description": 'The result of the aggregation of air quality measurements given a set of parameters.',
+                "type": list[object],
+                "format": { "mediaType": "application/json" }
             }
-        ]
+        }
+        
 
         self.response = "document"
     
@@ -107,6 +131,7 @@ class Process(BaseProcess):
         The process main execution function.
         """
         print("Executed process aggregation")
+        job_manager = JobManager()
         time = input['aggregation-time-unit']
         aggregation = input['aggregation-function']
 
@@ -143,6 +168,8 @@ class Process(BaseProcess):
             #Collection not found
             raise Exception("Collection does not exist")
         
+        print(self.job_id)
+        job_manager.update_job_progress(self.job_id, 20)
         # Validate aggregation
         aggregation_list = [
             "AVG", "SUM", "MIN", "MAX"
@@ -191,6 +218,7 @@ class Process(BaseProcess):
             bbox_string = f'{bbox[0]}, {bbox[1]}, {bbox[2]}, {bbox[3]}'
             where_filter += f" AND ST_Intersects(S.location, ST_MakeEnvelope({bbox_string}, '4326'))"
 
+        job_manager.update_job_progress(self.job_id, 40)
         # Execute query
         with connection.cursor() as cursor:
             cursor.execute(
@@ -213,8 +241,13 @@ class Process(BaseProcess):
                 ''',
                 [time, time]
             )
+            job_manager.update_job_progress(self.job_id, 90)
             response = self.dictfetchall(cursor)
-        return response
+        
+        output = {
+            "results": response
+        }
+        return output
 
     def __str__(self) -> str:
         return f'{self.title} - {self.description}'

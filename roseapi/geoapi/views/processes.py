@@ -1,16 +1,13 @@
 import json
 
 from django.http import HttpRequest
-from django.conf import settings
 
-from geoapi import models as geoapi_models
-from geoapi import serializers as geoapi_serializers
 from geoapi import responses as geoapi_responses
 from geoapi.schemas import schemas
 from geoapi import utils
 
 from geoapi.processes import utils as processes_utils
-from geoapi.schemas.process_schemas import ProcessSchema, ProcessesSchema
+from geoapi.schemas.process_schemas import ProcessesSchema, ProcessSummarySchema
 from geoapi.schemas.schemas import LinkSchema
 
 def processes(request: HttpRequest):
@@ -45,31 +42,77 @@ def processes(request: HttpRequest):
 
     # Get the list of processes in the folder /processes
     processes_modules = processes_utils.get_processes_list()
-    processes_list: list[ProcessSchema] = []
+    processes_list: list[ProcessSummarySchema] = []
+
     for process in processes_modules:
         # Links for individual process
-        process_links: list[LinkSchema] = []
-        process_links.append(LinkSchema(
-            href="",
-            title="",
-            rel="",
-            type=""
-        ))
-        processes_list.append(ProcessSchema(
+        processes_list.append(ProcessSummarySchema(
             version=process.version,
             id=process.id,
             title=process.title,
             description=process.description,
             keywords=process.keywords,
-            links=process_links,
+            links=[],
             jobControlOptions=process.jobControlOptions,
             outputTransmission=process.outputTransmission
-
         ))
 
+    # Pagination
+    MAX_ELEMENTS = 10000 # probably never reached...
+    limit = request.GET.get('limit', MAX_ELEMENTS ) #100 elements by default
+    offset = request.GET.get('offset', 0)
+    limit = int(limit)
+    offset = int(offset)
+
+    full_count = len(processes_list)
+    items = processes_list[ offset : (offset+limit) ]
+    retrieved_elements = len(items)
+
+    # Create pagination links if the result has pages
+    if limit + offset < full_count:
+        # next page link
+        next_limit = limit
+        next_offset = limit + offset
+        next_params = query_params
+        next_params = utils.replace_or_create_param(next_params, 'limit', str(next_limit))
+        next_params = utils.replace_or_create_param(next_params, 'offset', str(next_offset))
+        next_link_href = f'{base_url}/processes/?{next_params}'
+        next_link = LinkSchema(
+            href=next_link_href, rel='next', type=utils.content_type_from_format(f), title="Next page"
+        )
+        links.append(next_link)
+
+    if offset - limit >= 0:
+        # previous page link
+        prev_limit = limit
+        prev_offset = offset - limit
+        prev_params = query_params
+        prev_params = utils.replace_or_create_param(prev_params, 'limit', str(prev_limit))
+        prev_params = utils.replace_or_create_param(prev_params, 'offset', str(prev_offset))
+        prev_link_href = f'{base_url}/processes?{prev_params}'
+        prev_link = LinkSchema(
+            href=prev_link_href, rel='prev', type=utils.content_type_from_format(f), title="Previous page"
+        )
+        links.append(prev_link)
+
+    # links for each process
+    for process in items:
+        execution_link = LinkSchema(
+            href=f"{base_url}/processes/{process.id}/execution",
+            rel="http://www.opengis.net/def/rel/ogc/1.0/execute",
+            title="Execute process"
+        )
+        process.links.append(execution_link)
+
     processes_object = ProcessesSchema(
-        processes=processes_list,
+        processes=items,
         links=links
     )
-    serialized = json.dumps(processes_object.to_object())
+
+    # To have the number_matched and number_returned on top
+    processes_json = {
+        **processes_object.to_object()
+    }
+
+    serialized = json.dumps(processes_json)
     return geoapi_responses.response_json_200(serialized)

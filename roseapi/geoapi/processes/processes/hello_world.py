@@ -5,7 +5,7 @@ class Process(BaseProcess):
         self.id = "hello-world"
         self.version = "1.0"
         
-        self.title = "Hello World Process"
+        self.title = "Hello World Process" 
         self.description = "Hello World Process Descrption"
         self.keywords = [
             "ogc api",
@@ -17,24 +17,28 @@ class Process(BaseProcess):
             "async-execute"
         ]
         self.outputTransmission = [
-            "value"
+            "value",
+            "reference"
         ]
 
-        self.inputs = [
-            {
-                "name": "name",
-                "type": str
+        self.inputs = {
+            "name": {
+                "title":"Name for the Hello World!",
+                "description":'This is the name to greet in the hello world return string.',
+                "type": str,
+                "minOccurs": 0, # optional
+                "maxOccurs": 1
             }
-        ]
+        }
 
-        self.outputs = [
-            {
-                "example-output": {
-                    "format": { "mediaType": "application/json" },
-                    "transmissionMode": "value"
-                }
+        self.outputs = {
+            "hello-world-output": {
+                "title": "Greetings!",
+                "description": 'The hello world string with the provided name.',
+                "type": str,
+                "format": { "mediaType": "application/json" }
             }
-        ]
+        }
 
         self.response = "document"
     

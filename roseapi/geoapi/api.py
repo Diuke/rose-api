@@ -20,6 +20,7 @@ from geoapi.views.collection_query import collection_query as geoapi_collection_
 from geoapi.views.processes import processes as geoapi_processes
 from geoapi.views.process_by_id import process_by_id as geoapi_process_by_id
 from geoapi.views.execute_process_by_id import execute_process_by_id as geoapi_execute_process_by_id
+from geoapi.views.validate_process_by_id import validate_process_by_id as geoapi_validate_process_by_id
 from geoapi.views.jobs import jobs as geoapi_jobs
 from geoapi.views.job_by_id import job_by_id as geoapi_job_by_id
 from geoapi.views.job_results_by_id import job_results_by_id as geoapi_job_results_by_id
@@ -106,6 +107,17 @@ def processes(request: HttpRequest):
     Documentation
     """
     return geoapi_processes(request)
+
+
+@require_http_methods(["GET"])
+def validate_process_by_id(request: HttpRequest, processId: str):
+    """
+    Route: /processes/{processId}/validation
+
+    Documentation
+    """
+    return geoapi_validate_process_by_id(request, processId)
+
 
 @require_http_methods(["GET"])
 def process_by_id(request: HttpRequest, processId: str):

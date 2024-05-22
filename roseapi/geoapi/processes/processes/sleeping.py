@@ -1,5 +1,6 @@
 from geoapi.processes.utils import BaseProcess
 import time
+from geoapi.processes.job_manager import JobManager
 
 class Process(BaseProcess):
     def __init__(self):
@@ -21,21 +22,24 @@ class Process(BaseProcess):
             "value"
         ]
 
-        self.inputs = [
-            {
-                "name": "sleeptime",
-                "type": int
+        self.inputs = {
+            "sleeptime": {
+                "title": "Sleep time",
+                "description": 'The total number of seconds that the process will sleep',
+                "type": int,
+                "minOccurs": 0, # optional
+                "maxOccurs": 1
             }
-        ]
+        }
 
-        self.outputs = [
-            {
-                "example-output": {
-                    "format": { "mediaType": "application/json" },
-                    "transmissionMode": "value"
-                }
+        self.outputs = {
+            "sleep-result": {
+                "title": "String representing sleeping time",
+                "description": 'A zZ string for each second that the system was sleeping.',
+                "type": str,
+                "format": { "mediaType": "application/json" }
             }
-        ]
+        }
 
         self.response = "document"
     
@@ -45,8 +49,14 @@ class Process(BaseProcess):
         The process main execution function.
         """
         print("Executed process sleeping")
+        job_manager = JobManager()
         sleep_time = int(input["sleeptime"])
-        time.sleep(sleep_time)
+        sleep_times = 5
+        sleep_step = int(sleep_time / 5)
+        for i in range(sleep_times):
+            time.sleep(sleep_step)
+            job_manager.update_job_progress(self.job_id, (20 * (i+1)))
+
         sleep_str = "zZ" * sleep_time
         return f'{sleep_str}z'
     

@@ -645,7 +645,7 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
     items, retrieved_elements, full_count = utils.paginate(items, limit, offset)
 
     # Create pagination links if the result has pages
-    if limit + offset <= full_count:
+    if limit + offset < full_count:
         # next page link
         next_limit = limit
         next_offset = limit + offset

@@ -395,6 +395,7 @@ class JobsSerializer(JsonBaseSerializer):
             created_datetime=data.created_datetime,
             start_datetime=data.start_datetime,
             end_datetime=data.end_datetime,
+            udated_datetime=data.updated_datetime,
             result=data.result,
             type=data.type,
             links=[],

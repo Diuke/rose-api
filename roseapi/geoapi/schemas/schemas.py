@@ -25,7 +25,7 @@ class LinkSchema(BaseModel):
     """
     href: str
     rel: str
-    type: str | None
+    type: str | None = None
     hreflang: str | None = None
     title: str | None = None
     length: str | None = None

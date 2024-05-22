@@ -18,16 +18,17 @@ EXECUTE_DISMISS = "dismiss"
 
 class BaseProcess():
     def __init__(self):
-        self.id = ""
-        self.version = "1.0"
-        self.title = ""
-        self.description = ""
-        self.keywords = []
-        self.jobControlOptions = []
-        self.outputTransmission = []
-        self.inputs = []
-        self.outputs = []
-        self.response = ""
+        self.job_id: str | None = None
+        self.id: str | None = None
+        self.version: str | None = None
+        self.title: str | None = None
+        self.description: str | None = None
+        self.keywords: list[str] = []
+        self.jobControlOptions: list[str] = []
+        self.outputTransmission: list[str] = []
+        self.inputs = {}
+        self.outputs = {}
+        self.response: str | None = None
 
     def main(self, params):
         pass
@@ -83,19 +84,29 @@ def save_to_file(result, job_id):
 @app.task()
 def execute_async(job_id: str, process_id: str, params):
     try:
-        job = Job.objects.get(pk=job_id)
+        # Get the job before process execution
         process_module = get_process_by_id(process_id)
+        process_module.job_id = str(job_id)
 
         result = process_module.main(params)
+
+        # Get most current state of the job
+        job = Job.objects.get(pk=job_id)
+
         output_file = save_to_file(result, job_id)
         job.status = Job.JobStatus.SUCCESSFUL
         job.progress = 100
         job.end_datetime = datetime.datetime.now()
+        job.updated_datetime = datetime.datetime.now()
         job.result = output_file
         job.save()
     except Exception as ex:
+        # Get most current state of the job
+        job = Job.objects.get(pk=job_id)
+
         job.status = Job.JobStatus.FAILED
         job.progress = 0
         job.end_datetime = datetime.datetime.now()
+        job.updated_datetime = datetime.datetime.now()
         job.result = str(ex)
         job.save()

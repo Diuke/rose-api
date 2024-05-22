@@ -20,18 +20,30 @@ class Process(BaseProcess):
             "value"
         ]
 
-        self.input = [
-            {
-                "name": "param1",
-                "type": str
+        self.inputs = {
+            # All the metadata for the inputs received by the system
+            "param1": {
+                "title":"Example title for the param1",
+                "description":'This is the param1 description. Be descriptive',
+                "type": str,
+                "minOccurs": 1,
+                "maxOccurs": 1
             }
-        ]
+        }
+
+        self.outputs = {
+            "example-output": {
+                "title": "Example output",
+                "description": 'An example string.',
+                "type": str,
+                "format": { "mediaType": "application/json" },
+            }
+        }
 
     def main(self, input: object):
         """
         The process main execution function.
         """
-        print("Executed process Example")
         param1 = input['param1']
         return f'Example, { param1 }'
     

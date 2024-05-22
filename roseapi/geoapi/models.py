@@ -45,10 +45,11 @@ class Job(models.Model):
         max_length=10,
         default=JobStatus.ACCEPTED,
     )
-    progress = models.SmallIntegerField()
-    created_datetime = models.DateTimeField(null=True)
-    start_datetime = models.DateTimeField(null=True)
-    end_datetime = models.DateTimeField(null=True)
+    progress = models.SmallIntegerField(default=0)
+    created_datetime = models.DateTimeField(null=True, default=None)
+    start_datetime = models.DateTimeField(null=True, default=None)
+    end_datetime = models.DateTimeField(null=True, default=None)
+    updated_datetime = models.DateTimeField(null=True, default=None)
     process_id = models.CharField(max_length=50)
     type = models.CharField(
         choices=JobStatus.choices,
@@ -56,7 +57,6 @@ class Job(models.Model):
         max_length=10,
         default=None,
     )
-
     result = models.CharField(max_length=200, null=True) # filename
 
 
