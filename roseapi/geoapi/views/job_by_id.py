@@ -1,4 +1,5 @@
 import json
+import datetime
 
 from django.http import HttpRequest
 from django.conf import settings
@@ -45,6 +46,9 @@ def job_by_id(request: HttpRequest, id: str):
         res = AsyncResult(str(job.pk), app=app)
         res.revoke(terminate=True)
         job.status = geoapi_models.Job.JobStatus.DISMISSED
+        job.end_datetime = datetime.datetime.now()
+        job.duration = (job.end_datetime - job.start_datetime).total_seconds()
+        
         job.save()
         # Revoke the task with the given task_id
 

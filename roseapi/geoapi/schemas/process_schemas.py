@@ -114,22 +114,24 @@ class ProcessesSchema(BaseModel):
         
     
 class JobSchema(BaseModel):
-    job_id: str
+    job_id: str | None
     status: str
-    progress: int
-    start_datetime: dt.datetime | None
-    end_datetime: dt.datetime | None
-    created_datetime: dt.datetime | None
-    udated_datetime: dt.datetime | None
+    progress: int = 0
+    start_datetime: dt.datetime | None = None
+    end_datetime: dt.datetime | None = None
+    created_datetime: dt.datetime | None = None
+    udated_datetime: dt.datetime | None = None
     process_id: str 
-    result: str | None
-    type: str
-    links: list[LinkSchema]
+    result: str | None = None
+    type: str | None  = None
+    execution_type: str | None = None
+    links: list[LinkSchema] = []
 
 
     def to_object(self):
         return {
             "jobID": self.job_id,
+            "type": self.type,
             "processID": self.process_id,
             "created": self.created_datetime,
             "started": self.start_datetime,
@@ -137,7 +139,16 @@ class JobSchema(BaseModel):
             "updated": self.udated_datetime,
             "progress": self.progress,
             "status": self.status,
-            "type": "process",
+            "execution_type": self.execution_type, 
             "links": [l.to_object() for l in self.links]
         }
 
+class JobListSchema(BaseModel):
+    jobs: list[JobSchema] = []
+    links: list[LinkSchema] = []
+
+    def to_object(self):
+        return {
+            "jobs": [j.to_object() for j in self.jobs],
+            "links": [l.to_object() for l in self.links]
+        }

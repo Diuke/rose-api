@@ -69,6 +69,27 @@ def landing(request: HttpRequest):
         )
     )
 
+    # Processes Links
+    processes_link = f'{base_url}/processes'
+    links.append(
+        schemas.LinkSchema(
+            href=processes_link, 
+            rel="http://www.opengis.net/def/rel/ogc/1.0/processes", 
+            type='application/json', 
+            title="Processes"
+        )
+    )
+
+    jobs_link = f'{base_url}/jobs'
+    links.append(
+        schemas.LinkSchema(
+            href=jobs_link, 
+            rel="http://www.opengis.net/def/rel/ogc/1.0/job-list", 
+            type='application/json', 
+            title="Jobs"
+        )
+    )
+
     landing_data = schemas.LandingSchema(title="ROSE API", description="Reusable Open-Source Environmental Data Management OGC API", links=links)
     serialized = json.dumps(landing_data.to_object())
 

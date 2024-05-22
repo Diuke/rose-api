@@ -33,7 +33,7 @@ def processes(request: HttpRequest):
     links += landing_links
 
     # Self link
-    self_link_href = f'{base_url}/processes/'
+    self_link_href = f'{base_url}/processes'
     if query_params:
         self_link_href += f'?{query_params}'
     links.append(
@@ -76,7 +76,7 @@ def processes(request: HttpRequest):
         next_params = query_params
         next_params = utils.replace_or_create_param(next_params, 'limit', str(next_limit))
         next_params = utils.replace_or_create_param(next_params, 'offset', str(next_offset))
-        next_link_href = f'{base_url}/processes/?{next_params}'
+        next_link_href = f'{base_url}/processes?{next_params}'
         next_link = LinkSchema(
             href=next_link_href, rel='next', type=utils.content_type_from_format(f), title="Next page"
         )

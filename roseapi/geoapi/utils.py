@@ -401,7 +401,6 @@ def build_landing_links():
         schemas.LinkSchema(href=landing_link_json, rel="root", type=content_type_from_format('json'), title="Landing page of this server as JSON.")
     )
 
-    base_url = get_base_url()
     landing_link_html = f'{base_url}?f=html'
     links.append(
         schemas.LinkSchema(href=landing_link_html, rel="root", type=content_type_from_format('html'), title="Landing page of this server as HTML.")

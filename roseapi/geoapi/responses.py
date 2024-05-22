@@ -116,14 +116,34 @@ def response_not_found_404(msg=""):
     return HttpResponse(msg, status=404)
 
 def response_not_supported_405(msg=""):
-    return HttpResponse(msg, status=405)
+    headers = {}
+    content_type = "application/json" #by default json
+    status_code = 405
+    error_message = {
+        "error": status_code,
+        "message": msg 
+    }
+    return HttpResponse(
+        json.dumps(error_message), 
+        headers=headers, 
+        content_type=content_type,
+        status=status_code,
+    )
 
 def response_not_acceptable_406(msg=""):
     return HttpResponse(msg, status=406)
 
 def response_server_error_500(msg=""):
+    headers = {}
+    content_type = "application/json" #by default json
+    status_code = 500
     error_message = {
-        "error": 500,
+        "error": status_code,
         "message": msg 
     }
-    return HttpResponse(json.dumps(error_message), status=500)
+    return HttpResponse(
+        json.dumps(error_message), 
+        headers=headers, 
+        content_type=content_type,
+        status=status_code,
+    )

@@ -98,6 +98,7 @@ def execute_async(job_id: str, process_id: str, params):
         job.progress = 100
         job.end_datetime = datetime.datetime.now()
         job.updated_datetime = datetime.datetime.now()
+        job.duration = (job.end_datetime - job.start_datetime).total_seconds()
         job.result = output_file
         job.save()
     except Exception as ex:
@@ -108,5 +109,6 @@ def execute_async(job_id: str, process_id: str, params):
         job.progress = 0
         job.end_datetime = datetime.datetime.now()
         job.updated_datetime = datetime.datetime.now()
+        job.duration = (job.end_datetime - job.start_datetime).total_seconds()
         job.result = str(ex)
         job.save()

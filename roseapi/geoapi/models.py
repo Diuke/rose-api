@@ -1,4 +1,5 @@
 import re
+import datetime
 
 from django.conf import settings
 from django.db import models
@@ -29,13 +30,13 @@ def check_created_collection(sender, instance: GeoAPIConfiguration, **kwargs):
 
 class Job(models.Model):
     class JobStatus(models.TextChoices):
-        SUCCESSFUL = "SUCCESSFUL", _("successful")
-        ACCEPTED = "ACCEPTED", _("accepted")
-        RUNNING = "RUNNING", _("running")
-        FAILED = "FAILED", _("failed")
-        DISMISSED = "DISMISSED", _("dismissed")
+        SUCCESSFUL = "successful", _("successful")
+        ACCEPTED = "accepted", _("accepted")
+        RUNNING = "running", _("running")
+        FAILED = "failed", _("failed")
+        DISMISSED = "dismissed", _("dismissed")
     
-    class JobType(models.TextChoices):
+    class JobExecutionType(models.TextChoices):
         SYNC = "SYNC", _("sync")
         ASYNC = "ASYNC", _("async")
 
@@ -51,14 +52,15 @@ class Job(models.Model):
     end_datetime = models.DateTimeField(null=True, default=None)
     updated_datetime = models.DateTimeField(null=True, default=None)
     process_id = models.CharField(max_length=50)
-    type = models.CharField(
-        choices=JobStatus.choices,
+    type = models.CharField(max_length=10, default="process")
+    execution_type = models.CharField(
+        choices=JobExecutionType.choices,
         null=True,
         max_length=10,
         default=None,
     )
+    duration = models.FloatField(null=True, default=None) # duration
     result = models.CharField(max_length=200, null=True) # filename
-
 
 class Collection(models.Model):
     """

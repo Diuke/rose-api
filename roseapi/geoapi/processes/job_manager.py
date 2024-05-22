@@ -31,6 +31,7 @@ class JobManager():
             try:
                 job.progress = progress
                 job.updated_datetime = datetime.datetime.now()
+                job.duration = (job.updated_datetime - job.start_datetime).total_seconds()
                 job.save()
                 return True
             except:

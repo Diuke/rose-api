@@ -34,7 +34,7 @@ def execute_process_by_id(request: HttpRequest, id: str):
     job_id = uuid.uuid4()
     new_job = geoapi_models.Job()
     new_job.job_id = job_id
-    new_job.type = None
+    new_job.type = "process"
     new_job.status = geoapi_models.Job.JobStatus.ACCEPTED
     new_job.progress = 0
     new_job.process_id = process_module.id
@@ -74,7 +74,7 @@ def execute_process_by_id(request: HttpRequest, id: str):
         if execution_mode == processes_utils.EXECUTE_SYNC:
             # RUN SYNC
             new_job.status = geoapi_models.Job.JobStatus.RUNNING
-            new_job.type = geoapi_models.Job.JobType.SYNC
+            new_job.execution_type = geoapi_models.Job.JobExecutionType.SYNC
             new_job.start_datetime = datetime.datetime.now()
             new_job.updated_datetime = datetime.datetime.now()
             new_job.save()
@@ -87,7 +87,7 @@ def execute_process_by_id(request: HttpRequest, id: str):
         else: 
             # RUN ASYNC
             new_job.status = geoapi_models.Job.JobStatus.RUNNING
-            new_job.type = geoapi_models.Job.JobType.ASYNC
+            new_job.execution_type = geoapi_models.Job.JobExecutionType.ASYNC
             new_job.start_datetime = datetime.datetime.now()
             new_job.updated_datetime = datetime.datetime.now()
             new_job.save()
@@ -112,6 +112,7 @@ def execute_process_by_id(request: HttpRequest, id: str):
         new_job.progress = 100
         new_job.end_datetime = datetime.datetime.now()
         new_job.updated_datetime = datetime.datetime.now()
+        new_job.duration = (new_job.end_datetime - new_job.start_datetime).total_seconds()
         new_job.result = output_file
         new_job.save()
 
@@ -123,6 +124,7 @@ def execute_process_by_id(request: HttpRequest, id: str):
         new_job.status = geoapi_models.Job.JobStatus.FAILED
         new_job.end_datetime = datetime.datetime.now()
         new_job.updated_datetime = datetime.datetime.now()
+        new_job.duration = (new_job.end_datetime - new_job.start_datetime).total_seconds()
         new_job.progress = 0
         new_job.result = str(ex)
         new_job.save()

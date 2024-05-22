@@ -137,7 +137,6 @@ class CollectionsSerializer(JsonBaseSerializer):
     respectively, EDR collection schema is located in EDR_schemas.py, while the Features schema is located in 
     features_schemas.py.
     """
-
     def _init_options(self):
         super()._init_options()
         self.links: list[schemas.LinkSchema] = self.json_kwargs.pop("links", [])
@@ -384,9 +383,40 @@ class SingleFeatureGeoJSONSerializer(GeoJSONBaseSerializer):
         data["links"] = links_list
         return data
     
-class JobsSerializer(JsonBaseSerializer):
+class JobsListSerializer(JsonBaseSerializer):
+    def _init_options(self):
+        super()._init_options()
+        self.links: list[schemas.LinkSchema] = self.json_kwargs.pop("links", [])
+        # fetch once the base url to build the results links
+        self.base_url = utils.get_base_url()
+
+    def start_serialization(self):
+        self._init_options()
+        jobs_links = self.links.copy()
+        jobs_base = process_schemas.JobListSchema(links=jobs_links).to_object()
+        links_str = json.dumps(jobs_base['links'])
+        self.stream.write(
+            '{"links": %s, '
+            ' "jobs": [' % links_str
+        )
+
+    def end_serialization(self):
+        self.stream.write("]}")
+
     def get_dump_object(self, obj):
         data: Job = obj
+        status_link = schemas.LinkSchema(
+            href=f"{self.base_url}/jobs/{data.pk}",
+            rel="status",
+            type="application/json",
+            title="Job Status"
+        )
+        results_link = schemas.LinkSchema(
+            href=f"{self.base_url}/jobs/{data.pk}/results",
+            rel="status",
+            type="application/json",
+            title="Job Results"
+        )
         job = process_schemas.JobSchema(
             job_id=str(data.pk),
             status=data.status,
@@ -398,7 +428,7 @@ class JobsSerializer(JsonBaseSerializer):
             udated_datetime=data.updated_datetime,
             result=data.result,
             type=data.type,
-            links=[],
+            links=[status_link, results_link],
         )
         return job.to_object()
     
