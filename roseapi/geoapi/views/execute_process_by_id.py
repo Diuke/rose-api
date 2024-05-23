@@ -57,15 +57,15 @@ def execute_process_by_id(request: HttpRequest, id: str):
         request_inputs = body["inputs"]
     except:
         return geoapi_responses.response_bad_request_400(msg="inputs property not provided.", wrong_param="inputs")
-    try:
-        request_outputs = body["outputs"]
-    except:
-        # if outputs dictionary not provided, return all outputs by default
-        request_outputs = None
+    
     try:
         request_response = body["response"]
     except: 
         request_response = 'raw' # raw if the response type is not specified
+
+    # For now, output selection and multi-part responses are not supported.
+    #request_outputs = body["outputs"]
+    request_outputs = None
 
     # Validate response type: raw or document
     if request_response != "raw" and request_response != "document":
