@@ -61,8 +61,14 @@ def processes(request: HttpRequest):
     MAX_ELEMENTS = 10000 # probably never reached...
     limit = request.GET.get('limit', MAX_ELEMENTS ) #100 elements by default
     offset = request.GET.get('offset', 0)
-    limit = int(limit)
-    offset = int(offset)
+    try:
+        limit = int(limit)
+    except: return geoapi_responses.response_bad_request_400(msg=f"Limit parameter must be an integer", wrong_param="limit")
+    try:
+        offset = int(offset)
+    except: return geoapi_responses.response_bad_request_400(msg=f"Offset parameter must be an integer", wrong_param="offset")
+    if limit < 0 or offset < 0:
+        return geoapi_responses.response_bad_request_400(msg=f"Limit and offset parameters must be integers greater than zero.", wrong_param="limit,offset")
 
     full_count = len(processes_list)
     items = processes_list[ offset : (offset+limit) ]

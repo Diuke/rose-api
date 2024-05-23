@@ -21,8 +21,8 @@ def response_json_200(items_serialized=None, msg=None):
         resp = items_serialized
     elif msg is not None:
         resp = json.dumps({
-            "message": msg,
-            "status": 200
+            "status": 200,
+            "message": msg
         })
     else:
         resp = json.dumps({})
@@ -42,8 +42,8 @@ def response_json_201(items_serialized=None, msg=None):
         resp = items_serialized
     elif msg is not None:
         resp = json.dumps({
-            "message": msg,
-            "status": 201
+            "status": 201,
+            "message": msg
         })
     else:
         resp = json.dumps({})
@@ -88,8 +88,8 @@ def response_bad_request_400(msg="", wrong_param=""):
     content_type = "application/json" #by default json
 
     response_body = {
-        "error": msg,
-        "status": 400
+        "status": 400,
+        "message": msg
     }
     if wrong_param is not "":
         response_body["parameter"] = wrong_param
@@ -120,7 +120,7 @@ def response_not_supported_405(msg=""):
     content_type = "application/json" #by default json
     status_code = 405
     error_message = {
-        "error": status_code,
+        "status": status_code,
         "message": msg 
     }
     return HttpResponse(
@@ -133,12 +133,27 @@ def response_not_supported_405(msg=""):
 def response_not_acceptable_406(msg=""):
     return HttpResponse(msg, status=406)
 
+def response_gone_410(msg=""):
+    headers = {}
+    content_type = "application/json" #by default json
+    status_code = 410
+    error_message = {
+        "status": status_code,
+        "message": msg 
+    }
+    return HttpResponse(
+        json.dumps(error_message), 
+        headers=headers, 
+        content_type=content_type,
+        status=status_code,
+    )
+
 def response_server_error_500(msg=""):
     headers = {}
     content_type = "application/json" #by default json
     status_code = 500
     error_message = {
-        "error": status_code,
+        "status": status_code,
         "message": msg 
     }
     return HttpResponse(

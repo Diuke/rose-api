@@ -122,6 +122,7 @@ class JobSchema(BaseModel):
     created_datetime: dt.datetime | None = None
     udated_datetime: dt.datetime | None = None
     process_id: str 
+    message: str = ""
     result: str | None = None
     type: str | None  = None
     execution_type: str | None = None
@@ -130,15 +131,16 @@ class JobSchema(BaseModel):
 
     def to_object(self):
         return {
-            "jobID": self.job_id,
-            "type": self.type,
             "processID": self.process_id,
+            "type": self.type,
+            "jobID": self.job_id,
+            "status": self.status,
+            "message": self.message,
             "created": self.created_datetime,
             "started": self.start_datetime,
             "finished": self.end_datetime,
             "updated": self.udated_datetime,
             "progress": self.progress,
-            "status": self.status,
             "execution_type": self.execution_type, 
             "links": [l.to_object() for l in self.links]
         }

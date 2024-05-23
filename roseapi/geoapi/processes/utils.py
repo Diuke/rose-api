@@ -84,6 +84,16 @@ def save_to_file(result, job_id):
 @app.task()
 def execute_async(job_id: str, process_id: str, params):
     try:
+        # Get the initial state of the job
+        job = Job.objects.get(pk=job_id)
+
+        # The process started running, set the status as running
+        job.status = Job.JobStatus.RUNNING
+        job.start_datetime = datetime.datetime.now()
+        job.updated_datetime = datetime.datetime.now()
+        job.duration = (job.updated_datetime - job.start_datetime).total_seconds()
+        job.save()
+
         # Get the job before process execution
         process_module = get_process_by_id(process_id)
         process_module.job_id = str(job_id)
@@ -100,6 +110,7 @@ def execute_async(job_id: str, process_id: str, params):
         job.updated_datetime = datetime.datetime.now()
         job.duration = (job.end_datetime - job.start_datetime).total_seconds()
         job.result = output_file
+        job.message = "Job successfully finished."
         job.save()
     except Exception as ex:
         # Get most current state of the job
@@ -110,5 +121,5 @@ def execute_async(job_id: str, process_id: str, params):
         job.end_datetime = datetime.datetime.now()
         job.updated_datetime = datetime.datetime.now()
         job.duration = (job.end_datetime - job.start_datetime).total_seconds()
-        job.result = str(ex)
+        job.message = str(ex)
         job.save()

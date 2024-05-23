@@ -59,6 +59,7 @@ class Job(models.Model):
         max_length=10,
         default=None,
     )
+    message = models.TextField(default="", null=False)
     duration = models.FloatField(null=True, default=None) # duration
     result = models.CharField(max_length=200, null=True) # filename
 

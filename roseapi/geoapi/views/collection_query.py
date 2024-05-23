@@ -584,6 +584,15 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
         crs = request.GET.get('crs', None)
         limit = request.GET.get('limit', LIMIT_DEFAULT ) #100 elements by default
         offset = request.GET.get('offset', 0)
+        try:
+            limit = int(limit)
+        except: return responses.response_bad_request_400(msg=f"Limit parameter must be an integer", wrong_param="limit")
+        try:
+            offset = int(offset)
+        except: return responses.response_bad_request_400(msg=f"Offset parameter must be an integer", wrong_param="offset")
+        if limit < 0 or offset < 0:
+            return responses.response_bad_request_400(msg=f"Limit and offset parameters must be integers greater than zero.", wrong_param="limit,offset")
+        
         f = request.GET.get('f', 'json')
 
         if location_id is None:

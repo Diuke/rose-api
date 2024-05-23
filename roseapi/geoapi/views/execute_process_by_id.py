@@ -86,7 +86,7 @@ def execute_process_by_id(request: HttpRequest, id: str):
 
         else: 
             # RUN ASYNC
-            new_job.status = geoapi_models.Job.JobStatus.RUNNING
+            new_job.status = geoapi_models.Job.JobStatus.ACCEPTED
             new_job.execution_type = geoapi_models.Job.JobExecutionType.ASYNC
             new_job.start_datetime = datetime.datetime.now()
             new_job.updated_datetime = datetime.datetime.now()
@@ -114,6 +114,7 @@ def execute_process_by_id(request: HttpRequest, id: str):
         new_job.updated_datetime = datetime.datetime.now()
         new_job.duration = (new_job.end_datetime - new_job.start_datetime).total_seconds()
         new_job.result = output_file
+        new_job.message = "Job successfully finished."
         new_job.save()
 
         serialized = json.dumps(response, default=str)
@@ -126,6 +127,6 @@ def execute_process_by_id(request: HttpRequest, id: str):
         new_job.updated_datetime = datetime.datetime.now()
         new_job.duration = (new_job.end_datetime - new_job.start_datetime).total_seconds()
         new_job.progress = 0
-        new_job.result = str(ex)
+        new_job.message = str(ex)
         new_job.save()
         return geoapi_responses.response_server_error_500(msg="Execution Failed")

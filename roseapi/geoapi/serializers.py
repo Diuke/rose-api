@@ -427,7 +427,9 @@ class JobsListSerializer(JsonBaseSerializer):
             end_datetime=data.end_datetime,
             udated_datetime=data.updated_datetime,
             result=data.result,
+            message=data.message,
             type=data.type,
+            execution_type=data.execution_type,
             links=[status_link, results_link],
         )
         return job.to_object()
@@ -436,6 +438,7 @@ class SingleJobSerializer(JsonBaseSerializer):
     def _init_options(self):
         super()._init_options()
         self.links: list[schemas.LinkSchema] = self.json_kwargs.pop("links", [])
+        self.base_url = utils.get_base_url()
 
     def start_serialization(self):
         """
@@ -453,7 +456,22 @@ class SingleJobSerializer(JsonBaseSerializer):
         self.stream.write("")
 
     def get_dump_object(self, obj):
-        links_list = [ link.to_object() for link in self.links ]
-        data = self._current
-        data["links"] = links_list
-        return data
+        data: Job = obj
+        job_links = self.links
+        job = process_schemas.JobSchema(
+            job_id=str(data.pk),
+            status=data.status,
+            process_id=data.process_id,
+            progress=data.progress,
+            created_datetime=data.created_datetime,
+            start_datetime=data.start_datetime,
+            end_datetime=data.end_datetime,
+            udated_datetime=data.updated_datetime,
+            result=data.result,
+            message=data.message,
+            type=data.type,
+            execution_type=data.execution_type,
+            links=job_links,
+        )
+        return job.to_object()
+        

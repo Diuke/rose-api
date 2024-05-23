@@ -89,7 +89,17 @@ CONFORMANCE = [
     'http://www.opengis.net/spec/ogcapi-features-1/1.0/req/oas30',
     
     # EDR
-    'http://www.opengis.net/spec/ogcapi-edr-1/1.0/conf/core'
+    'http://www.opengis.net/spec/ogcapi-edr-1/1.0/conf/core',
+
+    # Processes
+    'http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/core',
+    'http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/ogc-process-description',
+    'http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/json',
+    #'http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/html', # Not yet
+    'http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/oas30',
+    'http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/job-list',
+    #'http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/callback' # Not yet
+    'http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/dismiss'
 
 ]
 

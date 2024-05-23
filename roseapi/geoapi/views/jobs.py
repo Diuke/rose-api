@@ -76,23 +76,35 @@ def jobs(request: HttpRequest):
         job_list = utils.filter_datetime(items, start_date, end_date, datetime_field="created")
 
     # minDuration parameter
-    min_duration_param = request.GET.get('minDuration', None)
-    if min_duration_param is not None:
-        min_duration_param = float(min_duration_param)
-        job_list = job_list.filter(duration__gt=min_duration_param)
+    try:
+        min_duration_param = request.GET.get('minDuration', None)
+        if min_duration_param is not None:
+            min_duration_param = float(min_duration_param)
+            job_list = job_list.filter(duration__gte=min_duration_param)
+    except:
+        return geoapi_responses.response_bad_request_400(msg=f"Value error in parameter.", wrong_param="minDuration")
     
     # maxDuration parameter
-    max_duration_param = request.GET.get('maxDuration', None)
-    if max_duration_param is not None:
-        max_duration_param = float(max_duration_param)
-        job_list = job_list.filter(duration__lt=max_duration_param)
+    try:
+        max_duration_param = request.GET.get('maxDuration', None)
+        if max_duration_param is not None:
+            max_duration_param = float(max_duration_param)
+            job_list = job_list.filter(duration__lt=max_duration_param)
+    except:
+        return geoapi_responses.response_bad_request_400(msg=f"Value error in parameter.", wrong_param="maxDuration")
 
     # Pagination
     MAX_ELEMENTS = 10000 # probably never reached...
     limit = request.GET.get('limit', MAX_ELEMENTS ) #100 elements by default
     offset = request.GET.get('offset', 0)
-    limit = int(limit)
-    offset = int(offset)
+    try:
+        limit = int(limit)
+    except: return geoapi_responses.response_bad_request_400(msg=f"Limit parameter must be an integer", wrong_param="limit")
+    try:
+        offset = int(offset)
+    except: return geoapi_responses.response_bad_request_400(msg=f"Offset parameter must be an integer", wrong_param="offset")
+    if limit < 0 or offset < 0:
+        return geoapi_responses.response_bad_request_400(msg=f"Limit and offset parameters must be integers greater than zero.", wrong_param="limit,offset")
 
     full_count = len(job_list)
     items = job_list[ offset : (offset+limit) ]
