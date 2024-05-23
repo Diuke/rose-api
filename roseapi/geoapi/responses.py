@@ -13,8 +13,7 @@ def response_geojson_200(items_serialized):
         status=200
     )
 
-def response_json_200(items_serialized=None, msg=None):
-    headers = {}
+def response_json_200(items_serialized=None, msg=None, headers={}):
     content_type = "application/json" #by default json
 
     if items_serialized is not None:

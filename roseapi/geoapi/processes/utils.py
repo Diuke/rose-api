@@ -14,6 +14,7 @@ PREFER_SYNC = "respond-sync"
 
 EXECUTE_SYNC = "sync-execute"
 EXECUTE_ASYNC = "async-execute"
+
 EXECUTE_DISMISS = "dismiss"
 
 class BaseProcess():
@@ -50,24 +51,47 @@ def get_process_by_id(id: str) -> BaseProcess:
             return p
     return None
 
-def determine_execution_type(request: HttpRequest) -> str:
+def map_execution_type(prefer_type):
+    if PREFER_SYNC: return EXECUTE_SYNC
+    elif PREFER_ASYNC: return EXECUTE_ASYNC
+    else: return None
+
+def determine_execution_type(request: HttpRequest, process_execution_modes: list[str]) -> tuple[str, bool]:
+    """
+    Returns the string of the preference and if the preference was applied.
+    """
     try:
         prefer_header = request.META.get("HTTP_PREFER", None)
+        execution_preferred_mode = map_execution_type(prefer_header)
 
+        # No prefer header is sent. Sync has priority
         if prefer_header is None:
-            prefer_header = PREFER_SYNC
-        
-        if prefer_header == PREFER_ASYNC:
-            return EXECUTE_ASYNC
-        elif prefer_header == PREFER_SYNC: 
-            return EXECUTE_SYNC
+            if EXECUTE_SYNC in process_execution_modes: 
+                return PREFER_SYNC, False
+            elif EXECUTE_ASYNC in process_execution_modes:
+                return PREFER_ASYNC, False
+            else: 
+                return None, None
+            
+        # Prefer header sent. If the speficied preference is in the possible execution modes, honor it
         else:
-            return None
+            if prefer_header == PREFER_ASYNC and execution_preferred_mode in process_execution_modes:
+                return PREFER_ASYNC, True
+            elif prefer_header == PREFER_SYNC and execution_preferred_mode in process_execution_modes: 
+                return PREFER_SYNC, True
+            
+            # If the prefer execution mode is not available, execute the one that is available (sync has priority).
+            else:
+                if EXECUTE_SYNC in process_execution_modes:
+                    return PREFER_SYNC, False
+                elif EXECUTE_ASYNC in process_execution_modes:
+                    return PREFER_ASYNC, False
     except:
-        pass
+        # If there is an error, return None
+        return None, None
 
-    # By default, return sync
-    return EXECUTE_SYNC
+    # If all fails, return None
+    return None, None
 
 def save_to_file(result, job_id):
     """
@@ -82,7 +106,7 @@ def save_to_file(result, job_id):
     return output_file
 
 @app.task()
-def execute_async(job_id: str, process_id: str, params):
+def execute_async(job_id: str, process_id: str, params, outputs: dict, response: str):
     try:
         # Get the initial state of the job
         job = Job.objects.get(pk=job_id)
@@ -103,7 +127,17 @@ def execute_async(job_id: str, process_id: str, params):
         # Get most current state of the job
         job = Job.objects.get(pk=job_id)
 
-        output_file = save_to_file(result, job_id)
+        response_object = {}
+        for output_id in outputs.keys():
+            output = outputs[output_id]
+            print(output)
+            response_object[output_id] = {
+                "id": output_id,
+                "value": result,
+                "format": output["format"]
+            }
+
+        output_file = save_to_file(response_object, job_id)
         job.status = Job.JobStatus.SUCCESSFUL
         job.progress = 100
         job.end_datetime = datetime.datetime.now()

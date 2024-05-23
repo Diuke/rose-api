@@ -18,7 +18,7 @@ class Process(BaseProcess):
         ]
         self.outputTransmission = [
             "value",
-            "reference"
+            # "reference" not supported
         ]
 
         self.inputs = {
@@ -31,6 +31,7 @@ class Process(BaseProcess):
             }
         }
 
+        # Supports only single-output processes
         self.outputs = {
             "hello-world-output": {
                 "title": "Greetings!",
@@ -49,7 +50,9 @@ class Process(BaseProcess):
         """
         print("Executed process hello world")
         name = input['name']
-        return f'Hello World, {name}'
+
+        response = f'Hello World, {name}'
+        return response
     
     def __str__(self) -> str:
         return f'{self.title} - {self.description}'

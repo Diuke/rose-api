@@ -168,7 +168,6 @@ class Process(BaseProcess):
             #Collection not found
             raise Exception("Collection does not exist")
         
-        print(self.job_id)
         job_manager.update_job_progress(self.job_id, 20)
         # Validate aggregation
         aggregation_list = [
@@ -244,10 +243,7 @@ class Process(BaseProcess):
             job_manager.update_job_progress(self.job_id, 90)
             response = self.dictfetchall(cursor)
         
-        output = {
-            "results": response
-        }
-        return output
+        return response
 
     def __str__(self) -> str:
         return f'{self.title} - {self.description}'
