@@ -165,7 +165,7 @@ def execute_process_by_id(request: HttpRequest, id: str):
         else:
             return geoapi_responses.response_server_error_500("Unexpected server error.")
         
-        output_file = processes_utils.save_to_file(result, job_id)
+        output_file = processes_utils.save_to_file(response, job_id)
 
         new_job.status = geoapi_models.Job.JobStatus.SUCCESSFUL
         new_job.progress = 100

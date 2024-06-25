@@ -8,7 +8,7 @@ class Process(BaseProcess):
         self.version = "1.0"
         
         self.title = "Sleeping Process"
-        self.description = "Sleeping Process Descrption"
+        self.description = "Example of a long-running process. The sleeping process sleeps the system by an amount of seconds sent as input."
         self.keywords = [
             "ogc api",
             "processes",
