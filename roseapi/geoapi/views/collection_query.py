@@ -638,6 +638,9 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
                 # overwrite displaying fields
                 fields = params_to_display
 
+    # Apply order-by to get consistent results before pagination
+    items = items.order_by('pk')
+
     # Pagination
     # Maximum 100.000 elements in request
     items_count = items.count()
