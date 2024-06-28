@@ -1,7 +1,7 @@
 # nginx.default
 
 server {
-    listen 8000;
+    listen 80;
     server_name localhost;
 
     location / {
