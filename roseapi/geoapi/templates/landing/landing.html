@@ -4,7 +4,7 @@
 
 <ul>
     {% for link in data.links %}
-        <li>{{ link.title }} - {{ link.href }}</li>
+        <li>{{ link.title }} - <a href="{{ link.href }}">{{ link.href }}<a/></li>
     {% endfor %}
 </ul>
 

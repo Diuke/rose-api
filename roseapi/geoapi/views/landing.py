@@ -11,12 +11,12 @@ def landing(request: HttpRequest):
 
     f = utils.get_format(request=request, accepted_formats=accepted_formats)
 
-    base_url = utils.get_base_url()
-    _, path, query_params = utils.deconstruct_url(request)
+    base_api_url = utils.get_base_url()
+    base_url, path, query_params = utils.deconstruct_url(request)
 
     links = []
     # Self link
-    self_link_href = f'{base_url}'
+    self_link_href = f'{base_api_url}'
     if query_params:
         self_link_href += f'?{query_params}'
     links.append(
@@ -28,7 +28,7 @@ def landing(request: HttpRequest):
     links += landing_links
 
     # conformance link
-    conformance_link = f'{base_url}/conformance?f=json'
+    conformance_link = f'{base_api_url}conformance?f=json'
     links.append(
         schemas.LinkSchema(
             href=conformance_link, 
@@ -40,10 +40,10 @@ def landing(request: HttpRequest):
     
 
     # API definition links
-    api_link = f'{base_url}/api'
+    api_link = f'{base_api_url}api'
     links.append(
         schemas.LinkSchema(
-            href=api_link, 
+            href=f'{api_link}?f=openapi', 
             rel="service-desc", 
             type='application/vnd.oai.openapi+json;version=3.0', 
             title="OpenAPI Definition."
@@ -59,7 +59,7 @@ def landing(request: HttpRequest):
     )
 
     # Collections Link
-    collections_link = f'{base_url}/collections?f=json'
+    collections_link = f'{base_api_url}collections?f=json'
     links.append(
         schemas.LinkSchema(
             href=collections_link, 
@@ -70,7 +70,7 @@ def landing(request: HttpRequest):
     )
 
     # Processes Links
-    processes_link = f'{base_url}/processes'
+    processes_link = f'{base_api_url}processes'
     links.append(
         schemas.LinkSchema(
             href=processes_link, 
@@ -80,13 +80,24 @@ def landing(request: HttpRequest):
         )
     )
 
-    jobs_link = f'{base_url}/jobs'
+    jobs_link = f'{base_api_url}jobs'
     links.append(
         schemas.LinkSchema(
             href=jobs_link, 
             rel="http://www.opengis.net/def/rel/ogc/1.0/job-list", 
             type='application/json', 
             title="Jobs"
+        )
+    )
+
+    # Admin link
+    admin_link = f'{base_url}/admin'
+    links.append(
+        schemas.LinkSchema(
+            href=admin_link, 
+            rel="admin", 
+            type='text/html', 
+            title="ROSE-API Admin"
         )
     )
 
