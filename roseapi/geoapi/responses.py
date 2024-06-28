@@ -90,7 +90,7 @@ def response_bad_request_400(msg="", wrong_param=""):
         "status": 400,
         "message": msg
     }
-    if wrong_param is not "":
+    if wrong_param != "":
         response_body["parameter"] = wrong_param
 
     return_body = json.dumps(response_body)

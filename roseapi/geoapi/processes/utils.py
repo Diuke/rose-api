@@ -1,4 +1,5 @@
 import json
+import os
 import datetime
 from pkgutil import walk_packages
 import geoapi.processes.processes as geoapi_processes
@@ -100,7 +101,8 @@ def save_to_file(result, job_id):
     config = GeoAPIConfiguration.objects.first()
     output_dir = config.output_dir
     output_file = f'{output_dir}/{job_id}.json'
-    with open(output_file, 'w') as fp:
+    print(os.getcwd(), output_file)
+    with open(output_file, 'w+') as fp:
         json.dump(result, fp, default=str)
     
     return output_file
@@ -130,7 +132,7 @@ def execute_async(job_id: str, process_id: str, params, outputs: dict, response:
         response_object = {}
         for output_id in outputs.keys():
             output = outputs[output_id]
-            print(output)
+            print(f"output is {output}")
             response_object[output_id] = {
                 "id": output_id,
                 "value": result,
