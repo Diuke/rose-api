@@ -12,13 +12,17 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         # Create the superuser from the environment variables
         load_dotenv(override=True) 
-        superuser_name = os.getenv('DJANGO_SUPERUSER_USERNAME')
-        superuser_password = os.getenv('DJANGO_SUPERUSER_PASSWORD')
+        # Get superuser email, password, and email from environment variables.
+        # If not available, set default variables.
+        superuser_name = os.getenv('DJANGO_SUPERUSER_USERNAME', "admin")
+        superuser_password = os.getenv('DJANGO_SUPERUSER_PASSWORD', "roseapi123")
+        superuser_email = os.getenv('DJANGO_SUPERUSER_PASSWORD', "example@example.com")
 
         existing_superuser = User.objects.filter(username=superuser_name)
         if not existing_superuser.exists():
             su = User(username=superuser_name)
             su.set_password(superuser_password)
+            su.email = superuser_email
             su.is_superuser = True
             su.is_staff = True
             su.save()
@@ -35,6 +39,15 @@ class Command(BaseCommand):
             print("Creating initial configuration")
             # Create initial config object
             config = geoapi_models.GeoAPIConfiguration()
+            running_in_docker = os.getenv('RUNNING_IN_DOCKER', 0)
+            if running_in_docker == 1:
+                config.output_dir = "/results"
+            else:
+                host_output_dir = os.getenv('HOST_OUTPUT_DIR', None)
+                if host_output_dir is None:
+                    raise EnvironmentError("Missing environment variable HOST_OUTPUT_DIR")
+                config.output_dir = host_output_dir
+            
             config.save()
 
         config = geoapi_models.GeoAPIConfiguration.objects.first()
@@ -171,6 +184,7 @@ class Command(BaseCommand):
             }
             new_collection = geoapi_models.Collection(**new_collection_params)
             new_collection.save()
+            air_quality_sensor_collection = new_collection
             print(f"Created {example_air_quality_sensor_name} collection.")
         else:
             print(f"Collection {example_air_quality_sensor_name} already exists.")
@@ -226,12 +240,13 @@ class Command(BaseCommand):
             }
             new_collection = geoapi_models.Collection(**new_collection_params)
             new_collection.save()
+            air_quality_measurement_collection = new_collection
             print(f"Created {example_air_quality_measurement_name} collection.")
         else:
             print(f"Collection {example_air_quality_measurement_name} already exists.")
 
-
         # Insert sensor example data
+        print(air_quality_sensor_collection)
         sensor_collection_model = geoapi_models.get_model(air_quality_sensor_collection)
         if len(sensor_collection_model.objects.all()) == 0:
             print(f"Inserting {example_air_quality_sensor_name} data.")

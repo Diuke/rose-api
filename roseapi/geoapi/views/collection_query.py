@@ -494,7 +494,6 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
     ##################################
     elif query == geoapi_schemas.ITEMS: 
         # ITEMS query could belong to OGC API Features and OGC API - EDR. 
-        print("enter items")
         # Add request-specific parameters
         accepted_parameters += [
             'bbox', 'parameter-name', 'crs'
@@ -566,7 +565,6 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
         for field in filtering_params.keys():
             if filtering_params[field] is not None:
                 items = utils.filter(items, field, filtering_params[field])
-        print("end items")
 
 
     ##################################
@@ -647,7 +645,6 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
 
     # Apply order-by to get consistent results before pagination
     items = items.order_by('pk')
-    print("items items")
 
     # Pagination
     # Maximum 100.000 elements in request
@@ -693,7 +690,6 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
 
     # Return depending on format
     if f in utils.F_GEOJSON:
-        print("start geojson serialize")
         geometry_field = None if skip_geometry_param else collection.geometry_field
 
         # Select the serializer depending on the API type.
@@ -712,7 +708,6 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
             "fields": fields
         }
         items_serialized = serializer.serialize(items, **options)
-        print("end geojson serialize")
         return responses.response_geojson_200(items_serialized)
 
     if f in utils.F_JSON:

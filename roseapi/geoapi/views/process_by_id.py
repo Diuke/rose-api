@@ -54,13 +54,10 @@ def process_by_id(request: HttpRequest, id: str):
 
     inputs = {}
     for key in process_module.inputs.keys():
-        print(process_module.inputs[key])
         inputs[key] = ProcessInput(**process_module.inputs[key])
 
-    print()
     outputs = {}
     for key in process_module.outputs.keys():
-        print(process_module.outputs[key])
         outputs[key] = ProcessOutput(**process_module.outputs[key])
 
     process_to_return = ProcessSchema(

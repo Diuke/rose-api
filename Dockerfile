@@ -16,6 +16,9 @@ COPY ./requirements.txt .
 COPY ./server_start.sh .
 RUN mkdir -p /results
 
+# Environment variable to manage the environment overload in case of locally run.
+ENV RUNNING_IN_DOCKER=1
+
 RUN python -m pip install --upgrade pip && \
     pip3 install -r requirements.txt 
 

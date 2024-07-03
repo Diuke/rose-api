@@ -80,7 +80,6 @@ def validate_process_by_id(request: HttpRequest, id: str):
             keywords_valid = False
             keywords_error_list.append("Keywords must be an array of keywords.")
         else:
-            print("is list")
             if len(process_module.keywords) == 0: # still valid, but raise a warning
                 keywords_error_list.append("WARNING: It is recommended to add at least one keyword.")
             if not (all(isinstance(element, str) for (element) in process_module.keywords)):

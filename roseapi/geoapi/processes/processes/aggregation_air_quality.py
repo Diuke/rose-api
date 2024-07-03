@@ -160,7 +160,7 @@ class Process(BaseProcess):
         else: 
             bbox = None
 
-        model_name = "airqualitymeasurement"
+        model_name = "example_air_quality_measurement"
         collection = None
         try:
             collection = geoapi_models.Collection.objects.get(model_name=model_name)
@@ -228,9 +228,9 @@ class Process(BaseProcess):
                     CAST(avg(M.sensor_id) AS INT) as sensor
                     {"" if skip_geometry else ", ST_AsText(S.location) as location"}
                 FROM
-                    public.geoapi_airqualitymeasurement as M
+                    public.geoapi_example_air_quality_measurement as M
                 INNER JOIN 
-                    public.geoapi_airqualitysensor as S
+                    public.geoapi_example_air_quality_sensor as S
                 ON
                     S.sensor_id = M.sensor_id
                 WHERE
