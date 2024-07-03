@@ -7,7 +7,7 @@ ROSE-API implements OGC API - Common (link), OGC API - Features, OGC API - Proce
 
 Additionally, it uses the OpenAPI standard, so you can publish the API description using Swagger or any OpenAPI parser.
 
-You can see [here]() the presentation of ROSE-API in FOSS4G Europe - Tartu 2024!
+You can see [here](https://github.com/Diuke/rose-api/blob/main/extra/ROSE-API%20Presentation.pdf) the presentation of ROSE-API in FOSS4G Europe - Tartu 2024!
 
 ## Running ROSE-API:
 ROSE-API uses multiple technologies:
