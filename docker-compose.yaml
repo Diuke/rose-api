@@ -19,7 +19,7 @@ services:
     env_file:
       - .env
     ports:
-      - ${HOST_DB_PORT}:${DB_PORT}
+      - ${HOST_DB_PORT}:${POSTGRES_PORT}
     restart: on-failure
     volumes:
       - postgis_data:/var/lib/postgresql/data  
