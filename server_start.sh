@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # server_start.sh
 
+# Make an __init__.py for the custom processes folder
+touch /geoapi/processes/custom_processes/__init__.py
+
 python3 manage.py collectstatic --noinput
 python3 manage.py migrate --noinput
 python3 manage.py setup

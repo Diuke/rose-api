@@ -7,12 +7,15 @@ services:
       - ${HOST_HTTP_WEB_PORT}:80
       - ${HOST_HTTPS_WEB_PORT}:443
     depends_on:
-      - db
-      - rabbitmq
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
     env_file:
       - .env
     volumes:
       - ${HOST_OUTPUT_DIR}:/results
+      - ${HOST_PROCESSING_DIR}:/geoapi/processes/processes
     
   db:
     image: postgis/postgis:16-3.4-alpine
@@ -23,6 +26,12 @@ services:
     restart: on-failure
     volumes:
       - postgis_data:/var/lib/postgresql/data  
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
 
   rabbitmq:
     image: rabbitmq:3-management-alpine

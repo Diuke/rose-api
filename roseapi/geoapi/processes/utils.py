@@ -1,14 +1,9 @@
 import json
-import os
 import datetime
-import importlib
 from pkgutil import walk_packages
-import geoapi.processes.processes as geoapi_processes
 from django.http import HttpRequest
-from celery.contrib.abortable import AbortableTask
-from celery.utils.log import get_task_logger
 from roseapi.celery import app
-
+from django.conf import settings
 
 from geoapi.models import GeoAPIConfiguration, Job
 
@@ -37,25 +32,38 @@ class BaseProcess():
     def main(self, params):
         pass
 
+def get_data_storage_base_path() -> str:
+    return settings.PROCESSING_STORAGE_DIR
+
+def get_results_base_path() -> str:
+    return settings.RESULTS_DIR
+
 def get_processes_list() -> list[BaseProcess]:
-    processes: list[BaseProcess] = []
-    pkg_path   = geoapi_processes.__path__
-    pkg_prefix = geoapi_processes.__name__ + '.'
+    processes_classes: list[BaseProcess] = []
+    import geoapi.processes.processes as geoapi_processes
+    module = geoapi_processes
+    for submodule in walk_packages(module.__path__):
+        submodule_name = submodule.name
+        print(submodule_name)
+        if submodule_name != "modules":
+            module = submodule.module_finder.find_module(f'{submodule_name}').load_module(f'{submodule_name}')
+            new_process: BaseProcess = module.Process()
+            processes_classes.append(new_process)  
+    
+    try:
+        import geoapi.processes.custom_processes as geoapi_custom_processes
+        module = geoapi_custom_processes
+        for submodule in walk_packages(module.__path__):
+            submodule_name = submodule.name
+            print(submodule_name)
+            if submodule_name != "modules":
+                module = submodule.module_finder.find_module(f'{submodule_name}').load_module(f'{submodule_name}')
+                new_process: BaseProcess = module.Process()
+                processes_classes.append(new_process)        
+    except ModuleNotFoundError:
+        pass
 
-    for finder, full_name, ispkg in walk_packages(pkg_path, prefix=pkg_prefix):
-        try:
-            if hasattr(finder, 'find_module'):
-                loader = finder.find_module(full_name)
-                module = loader.load_module(full_name)
-            else:
-                raise AttributeError("No find_module on finder")
-        except Exception:
-            module = importlib.import_module(full_name)
-
-        proc: BaseProcess = module.Process()
-        processes.append(proc)
-
-    return processes
+    return processes_classes
 
 def get_process_by_id(id: str) -> BaseProcess:
     processes = get_processes_list()
