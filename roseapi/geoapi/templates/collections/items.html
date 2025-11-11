@@ -1,7 +1,209 @@
-<ul>
-    {% for item in data %}
-        <li>
-            {{ item.id }}
-        </li>
-    {% endfor %}
-</ul>
+{% extends 'base/base.html' %}
+{% load static %}
+{% load json_script %}
+
+{% block title %}Items{% endblock %}
+
+{% block breadcrumbs %}
+  <nav aria-label="breadcrumb">
+    <div>
+      <ol class="breadcrumb"></ol>
+    </div>
+  </nav>
+{% endblock %}
+
+{% block content %}
+<h1 class="title">{{ collection.title }}</h1>
+
+<div class="container">
+
+  <div class="map-column">
+    <div id="map" class="map"></div>
+
+    <div class="limit-controls">
+      <label for="limitInput">Limit:</label>
+      <input
+        type="number"
+        id="limitInput"
+        min="1"
+        max="100"
+        value="{{ request.GET.limit|default:20 }}"
+      />
+      <button id="applyLimit">Apply</button>
+    </div>
+
+    <div class="warning">Warning: Higher limits not recommended!(max value is 100)</div>
+
+    <div class="pagination-controls">
+      <a id="previousLink" href="#" class="nav-link">Previous</a>
+      <a id="nextLink" href="#" class="nav-link">Next</a>
+    </div>
+  </div>
+
+  <div class="table-column">
+    <div class="table-container">
+      <table class="items-table">
+        <thead>
+          <tr>
+            {% for field in data.0.keys %}
+              <th>{{ field }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% json_script data 'items-data' %}
+
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+/>
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css"
+/>
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css"
+/>
+
+<link rel="stylesheet" href="{% static 'css/items.css' %}" />
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const pathParts = window.location.pathname.split('/');
+    const modelName = pathParts[3] || '';
+
+    const collectionsUrl = '/api/collections?f=html';
+    const modelUrl = `/api/collections/${modelName}?f=html`;
+    const itemsUrl = `/api/collections/${modelName}/items?f=html`;
+
+    const breadcrumbEl = document.querySelector('.breadcrumb');
+    if (breadcrumbEl) {
+      breadcrumbEl.innerHTML = `
+        <li class="breadcrumb-item"><a href="${collectionsUrl}">Collections</a></li>
+        <li class="breadcrumb-item"><a href="${modelUrl}">
+    ${modelName.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+  </a></li>
+        <li class="breadcrumb-item active" aria-current="page">Items</li>
+      `;
+    }
+    fetch(`/api/collections/${modelName}?f=json`)
+      .then(res => res.json())
+      .then(meta => {
+        const titleEl = document.querySelector('.title');
+        if (meta.title) titleEl.textContent = meta.title;
+      })
+      .catch(err => console.error('Failed to fetch collection metadata:', err));
+
+    let limit = parseInt(new URLSearchParams(location.search).get('limit')) || 20;
+    let offset = parseInt(new URLSearchParams(location.search).get('offset')) || 0;
+
+    const initialItems = JSON.parse(
+      document.getElementById('items-data').textContent
+    );
+
+    const map = L.map('map').setView([45.5, 9.1], 6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: 'Leaflet | Map data © OpenStreetMap contributors'
+    }).addTo(map);
+    const markers = L.markerClusterGroup().addTo(map);
+
+    const headerFields = Array.from(
+      document.querySelectorAll('.items-table thead th')
+    ).map(th => th.textContent.trim());
+
+    function updateTable(items) {
+      const tbody = document.querySelector('.items-table tbody');
+      tbody.innerHTML = '';
+      items.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.dataset.id = item.id;
+        tr.style.cursor = 'pointer';
+        const itemUrl = `/api/collections/${modelName}/items/${item.id}?f=html`;
+        tr.addEventListener('click', () => window.location.href = itemUrl);
+        headerFields.forEach(field => {
+          const td = document.createElement('td');
+          if (field === 'id') {
+            const a = document.createElement('a');
+            a.href = itemUrl;
+            a.textContent = `${modelName}.${item.id}`;
+            td.appendChild(a);
+          } else {
+            td.textContent = item[field] ?? '';
+          }
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderGeoJSON() {
+      const geoUrl = `/api/collections/${modelName}/items?limit=${limit}&offset=${offset}&f=geojson`;
+      fetch(geoUrl)
+        .then(res => res.json())
+        .then(geojson => {
+          markers.clearLayers();
+          const bounds = [];
+          geojson.features.forEach(feature => {
+            const [lon, lat] = feature.geometry.coordinates;
+            if (isNaN(lat) || isNaN(lon)) return;
+            const id = feature.properties.id ?? feature.id;
+            const itemUrl = `/api/collections/${modelName}/items/${id}?f=html`;
+            const marker = L.marker([lat, lon]);
+            marker.bindPopup(`<a href="${itemUrl}">${id}</a>`);
+            marker.on('click', () => {
+              const row = document.querySelector(`tr[data-id="${id}"]`);
+              if (row) {
+                row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                row.classList.add('highlight');
+                setTimeout(() => row.classList.remove('highlight'), 1500);
+              }
+            });
+            markers.addLayer(marker);
+            bounds.push([lat, lon]);
+          });
+          if (bounds.length) map.fitBounds(bounds, { padding: [20, 20] });
+        })
+        .catch(err => console.error('GeoJSON load failed:', err));
+    }
+
+    updateTable(initialItems);
+    renderGeoJSON();
+
+    function fetchTable() {
+      const url = new URL(location.href);
+      url.searchParams.set('limit', limit);
+      url.searchParams.set('offset', offset);
+      url.searchParams.set('f', 'json');
+      return fetch(url).then(res => res.json());
+    }
+
+    function fetchAndUpdate() {
+      fetchTable()
+        .then(data => updateTable(data))
+        .then(() => renderGeoJSON());
+    }
+
+    document.getElementById('applyLimit').addEventListener('click', () => {
+      const val = parseInt(document.getElementById('limitInput').value) || 1;
+      limit = Math.min(val, 100);
+      offset = 0;
+      fetchAndUpdate();
+    });
+    document.getElementById('previousLink').addEventListener('click', e => {
+      e.preventDefault(); offset = Math.max(offset - limit, 0); fetchAndUpdate();
+    });
+    document.getElementById('nextLink').addEventListener('click', e => {
+      e.preventDefault(); offset += limit; fetchAndUpdate();
+    });
+  });
+</script>
+{% endblock %}

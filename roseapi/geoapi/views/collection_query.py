@@ -86,10 +86,13 @@ def collection_query(request: HttpRequest, collectionId: str, query: str):
     
     # Limit parameter, if not an integer, return error
     try:
-        limit = int(request.GET.get('limit', LIMIT_DEFAULT)) #100 elements by default
+        if utils.get_format(request=request, accepted_formats=accepted_formats) in utils.F_HTML:
+            limit = int(request.GET.get('limit', 20))  # default 20 for HTML
+        else:
+            limit = int(request.GET.get('limit', LIMIT_DEFAULT))  # default from constant
     except:
         return responses.response_bad_request_400("Error in limit parameter")
-    
+
     # Offset parameter, if not an integer, return error
     try:
         offset = int(request.GET.get('offset', 0))

@@ -1,0 +1,91 @@
+{% extends 'base/base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}{{ collection.title }} – {{ feature.pk }}{% endblock %}
+
+{% block styles %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'css/item_detail.css' %}">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+{% endblock %}
+
+{% block breadcrumbs %}
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/api/collections?f=html">Collections</a></li>
+      <li class="breadcrumb-item">
+        <a href="/api/collections/{{ collection.model_name }}?f=html">{{ collection.title }}</a>
+      </li>
+      <li class="breadcrumb-item">
+        <a href="/api/collections/{{ collection.model_name }}/items?f=html">Items</a>
+      </li>
+      <li class="breadcrumb-item active" aria-current="page">{{ feature.pk }}</li>
+    </ol>
+  </nav>
+{% endblock %}
+
+{% block content %}
+<h1 class="item-title">{{ feature.pk }}</h1>
+
+<div class="item-container">
+  <div id="map" class="item-map"></div>
+
+  <table class="item-table">
+    <thead>
+      <tr>
+        <th>Property</th>
+        <th>Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for field in fields %}
+        {% with value=properties|dict_get:field %}
+          <tr>
+            <td>{{ field }}</td>
+            <td>
+              {% if "http" in value|stringformat:"s" %}
+                <a href="{{ value }}" target="_blank">{{ value }}</a>
+              {% elif ".jpg" in value|stringformat:"s" or ".png" in value|stringformat:"s" %}
+                <img src="{{ value }}" alt="{{ field }}" class="thumbnail" />
+              {% else %}
+                {{ value }}
+              {% endif %}
+            </td>
+          </tr>
+        {% endwith %}
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+  <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const parts = window.location.pathname.split('/');
+      const modelName = parts[3] || '';
+      const itemId = parts[5] || '';
+
+      // Initialize map at default location
+      const map = L.map('map').setView([0, 0], 13);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: 'Map data © <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
+      }).addTo(map);
+
+      fetch(`/api/collections/${modelName}/items/${itemId}?f=geojson`)
+        .then(response => response.json())
+        .then(geojson => {
+          const coords = geojson.geometry.coordinates; // [lon, lat]
+          const lon = coords[0];
+          const lat = coords[1];
+          // Re-center map and add marker
+          map.setView([lat, lon], 13);
+          const marker = L.marker([lat, lon]).addTo(map);
+          marker.bindPopup(`<b>${itemId}</b>`).openPopup();
+        })
+        .catch(error => console.error('Error loading GeoJSON:', error));
+    });
+  </script>
+{% endblock %}

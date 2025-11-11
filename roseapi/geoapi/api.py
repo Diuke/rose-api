@@ -11,7 +11,8 @@ from geoapi.views.conformance import conformance as geoapi_conformance
 # Features
 from geoapi.views.collections import collections as geoapi_collections 
 from geoapi.views.collection_by_id import collection_by_id as geoapi_collection_by_id
-from geoapi.views.collection_item_by_id import collection_item_by_id as geoapi_collection_item_by_id 
+from geoapi.views.collection_input import collection_input as geoapi_collection_input
+from geoapi.views.collection_item_by_id import collection_item_by_id as geoapi_collection_item_by_id
 
 # Features Items / EDR
 from geoapi.views.collection_query import collection_query as geoapi_collection_query
@@ -74,6 +75,17 @@ def collection_by_id(request: HttpRequest, collectionId: str):
     OGC API - Features collection by id endpoint. Retrieves a single collection by its ID.
     """
     return geoapi_collection_by_id(request, collectionId)
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def collection_input(request: HttpRequest, collectionId: str):
+    """
+    Route: /collections/{collection_id}/input
+
+    OGC API - Features collection by id endpoint. Retrieves a single collection by its ID.
+    """
+    return geoapi_collection_input(request, collectionId)
+
 
 @require_http_methods(["GET"])
 def collection_item_by_id(request: HttpRequest, collectionId: str, featureId: int):

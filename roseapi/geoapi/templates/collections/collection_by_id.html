@@ -1,14 +1,137 @@
-<ul>
-    <li>
-        {{ data.id }} - {{ data.title }}
-    </li>
-</ul>
-    
-<ul>
-    {% for link in data.links %}
-        <li>
-            <a href="{{ link.href }}">{{ link.href }}</a>
-        </li>
-    {% endfor %}
-</ul>
-    
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}{{ data.title }}{% endblock %}
+
+{% block breadcrumbs %}
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/api/collections?f=html">Collections</a></li>
+      <li class="breadcrumb-item active">{{ data.title }}</li>
+    </ol>
+  </nav>
+{% endblock %}
+
+{% block content %}
+  <h1 class="page-title">{{ data.title }}</h1>
+  <p class="description">{{ data.description }}</p>
+
+  <div class="collection-wrapper">
+    <div id="map" class="collection-map"></div>
+
+    <div class="collection-content">
+      <h2 class="section-title">Links</h2>
+      <ul class="styled-link-list">
+        {% for link in data.links %}
+          <li>
+            <a href="{{ link.href }}" target="_blank" rel="noopener noreferrer">
+              {{ link.title }}{% if link.type %} ({{ link.type }}){% endif %}
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+
+      <h2 class="section-title">Reference Systems</h2>
+      <p><a href="{{ data.extent.spatial.crs }}">{{ data.extent.spatial.crs }}</a></p>
+
+      <h2 class="section-title">Storage CRS</h2>
+      <p>
+        CRS: <a href="{{ data.extent.spatial.crs }}">{{ data.extent.spatial.crs }}</a><br>
+        Epoch: <em>(not specified)</em>
+      </p>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+  <script>
+    function cleanUrl(url) {
+      return url.replace(/([^:]\/)\/+/g, "$1");
+    }
+
+    document.querySelectorAll("a").forEach(a => {
+      a.href = cleanUrl(a.href);
+    });
+
+    const pathParts = window.location.pathname.split('/');
+    const collectionIndex = pathParts.indexOf("collections");
+    const collectionId = collectionIndex !== -1 ? pathParts[collectionIndex + 1] : null;
+
+    if (!collectionId) {
+      console.error("Collection ID not found in URL.");
+    }
+
+    const apiBase = window.location.origin;
+    const url = `${apiBase}/api/collections/${collectionId}/items?f=geojson`;
+
+    const defaultBBox = [[-90, -180], [90, 180]];
+
+    const map = L.map('map');
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: 'Map data © OpenStreetMap contributors'
+    }).addTo(map);
+
+    fetch(url)
+      .then(res => res.json())
+      .then(data => {
+        const layer = L.geoJSON(data, {
+          pointToLayer: (feature, latlng) => {
+            const props = feature.properties;
+            return L.circleMarker(latlng, {
+              radius: 6,
+              fillColor: "#007bff",
+              color: "#005b9e",
+              weight: 1,
+              opacity: 1,
+              fillOpacity: 0.8
+            }).bindPopup(`
+              <strong>Station ID:</strong> ${props.station_id}<br>
+              <strong>Sensor:</strong> ${props.sensor_type}<br>
+              <strong>Unit:</strong> ${props.measurement_unit}
+            `);
+          }
+        }).addTo(map);
+
+        const bounds = layer.getBounds();
+        const sw = bounds.getSouthWest();
+        const ne = bounds.getNorthEast();
+
+        const centerLat = (sw.lat + ne.lat) / 2;
+        const centerLng = (sw.lng + ne.lng) / 2;
+        const latSpan = Math.abs(ne.lat - sw.lat);
+        const lngSpan = Math.abs(ne.lng - sw.lng);
+        const maxSpan = Math.max(latSpan, lngSpan) * 1.2;
+
+        if (maxSpan < 180) {
+          const half = maxSpan / 2;
+          const squareBounds = L.latLngBounds(
+            [centerLat - half, centerLng - half],
+            [centerLat + half, centerLng + half]
+          );
+
+          map.fitBounds(squareBounds);
+
+          L.rectangle(squareBounds, {
+            color: "#007bff",
+            weight: 2,
+            fillOpacity: 0.1
+          }).addTo(map);
+        } else {
+          map.fitBounds(defaultBBox);
+          L.rectangle(defaultBBox, {
+            color: "#999",
+            weight: 1,
+            dashArray: '4 4',
+            fillOpacity: 0.05
+          }).addTo(map);
+        }
+      });
+  </script>
+{% endblock %}
+
+{% block styles %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'css/collection.css' %}">
+{% endblock %}

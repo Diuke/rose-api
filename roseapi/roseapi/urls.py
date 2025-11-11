@@ -18,9 +18,11 @@ from django.contrib import admin
 from django.urls import path, include
 from geoapi import urls as geoapi_urls
 from django.shortcuts import redirect
+from geoapi.views import collection_input
 
 urlpatterns = [
     path('', lambda request: redirect('api/', permanent=False)),
     path('admin/', admin.site.urls),
     path('api/', include('geoapi.urls')),
+    path('upload', collection_input.upload_data_view, name='upload_data'),
 ]

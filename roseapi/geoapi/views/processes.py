@@ -10,6 +10,8 @@ from geoapi.processes import utils as processes_utils
 from geoapi.schemas.process_schemas import ProcessesSchema, ProcessSummarySchema
 from geoapi.schemas.schemas import LinkSchema
 
+from django.shortcuts import render
+
 def processes(request: HttpRequest):
     """
     Handler for the /processes endpoint.
@@ -33,7 +35,7 @@ def processes(request: HttpRequest):
     links += landing_links
 
     # Self link
-    self_link_href = f'{base_url}/processes'
+    self_link_href = f'{base_url}processes'
     if query_params:
         self_link_href += f'?{query_params}'
     links.append(
@@ -82,7 +84,7 @@ def processes(request: HttpRequest):
         next_params = query_params
         next_params = utils.replace_or_create_param(next_params, 'limit', str(next_limit))
         next_params = utils.replace_or_create_param(next_params, 'offset', str(next_offset))
-        next_link_href = f'{base_url}/processes?{next_params}'
+        next_link_href = f'{base_url}processes?{next_params}'
         next_link = LinkSchema(
             href=next_link_href, rel='next', type=utils.content_type_from_format(f), title="Next page"
         )
@@ -95,7 +97,7 @@ def processes(request: HttpRequest):
         prev_params = query_params
         prev_params = utils.replace_or_create_param(prev_params, 'limit', str(prev_limit))
         prev_params = utils.replace_or_create_param(prev_params, 'offset', str(prev_offset))
-        prev_link_href = f'{base_url}/processes?{prev_params}'
+        prev_link_href = f'{base_url}processes?{prev_params}'
         prev_link = LinkSchema(
             href=prev_link_href, rel='prev', type=utils.content_type_from_format(f), title="Previous page"
         )
@@ -104,7 +106,7 @@ def processes(request: HttpRequest):
     # links for each process
     for process in items:
         execution_link = LinkSchema(
-            href=f"{base_url}/processes/{process.id}/execution",
+            href=f"{base_url}processes/{process.id}/execution",
             rel="http://www.opengis.net/def/rel/ogc/1.0/execute",
             title="Execute process"
         )
@@ -120,5 +122,15 @@ def processes(request: HttpRequest):
         **processes_object.to_object()
     }
 
-    serialized = json.dumps(processes_json)
-    return geoapi_responses.response_json_200(serialized)
+    if f in utils.F_HTML:
+        return render(request, 'processes/processes.html', {
+            'processes': items,
+            'links': links,
+            'limit': limit,
+            'offset': offset,
+            'number_matched': full_count,
+            'number_returned': retrieved_elements
+        })
+    else:
+        serialized = json.dumps(processes_json)
+        return geoapi_responses.response_json_200(serialized)

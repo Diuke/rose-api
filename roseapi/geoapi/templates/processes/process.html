@@ -1,0 +1,94 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}{{ process.title|default:process.id }}{% endblock %}
+
+{% block breadcrumbs %}
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/api/processes?f=html">Processes</a></li>
+      <li class="breadcrumb-item active">{{ process.title }}</li>
+    </ol>
+  </nav>
+{% endblock %}
+
+{% block content %}
+  <h1>{{ process.title|default:process.id }}</h1>
+  <p>{{ process.description }}</p>
+<div class="process-detail">
+
+  {% if process.keywords %}
+    <div class="tags">
+      {% for tag in process.keywords %}
+        <span class="tag">{{ tag }}</span>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <h3>Inputs</h3>
+  {% if process.inputs %}
+    <table>
+      <thead>
+        <tr>
+          <th>Id</th>
+          <th>Title</th>
+          <th>Data Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for key, input in process.inputs.items %}
+        <tr>
+          <td>{{ key }}</td>
+          <td>{{ input.title }}</td>
+          <td>{{ input.schema.type|default:"–" }}</td>
+          <td>{{ input.description }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+
+  <h3>Outputs</h3>
+  {% if process.outputs %}
+    <table>
+      <thead>
+        <tr>
+          <th>Id</th>
+          <th>Title</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for key, output in process.outputs.items %}
+        <tr>
+          <td>{{ key }}</td>
+          <td>{{ output.title }}</td>
+          <td>{{ output.description }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+
+  <h2 class="paddings">Execution modes</h2>
+  <ul class="paddings">
+    {% for mode in process.jobControlOptions %}
+      <li>{{ mode|title }}</li>
+    {% endfor %}
+  </ul>
+
+  <h2 class="paddings">Links</h2>
+  <ul class="paddings">
+    {% for link in process.links %}
+      <li><a href="{{ link.href }}">{{ link.title|default:link.href }} ({{ link.type }})</a></li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}
+
+{% block styles %}
+  {{ block.super }}
+        <link rel="stylesheet" href="{% static 'css/process.css' %}">
+{% endblock %}
+

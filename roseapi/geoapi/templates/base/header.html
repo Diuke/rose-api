@@ -1,0 +1,15 @@
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/header.css' %}">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap" rel="stylesheet">
+
+<header class="site-header">
+  <div class="brand">
+    <a href="/api?f=html">
+      <img class="brand__logo" src="{% static 'images/logo.png' %}" alt="ROSE-API Logo">
+    </a>
+  </div>
+
+  <a class="nav-link" href="/api/collections?f=html">Collections</a>
+  <a class="nav-link" href="{% url 'upload_data' %}">Upload Data</a>
+  <a class="nav-link" href="{% url 'admin:index' %}">Admin</a>
+</header>

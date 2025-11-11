@@ -1,0 +1,55 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Processes{% endblock %}
+
+{% block content %}
+  <h1 class="page-title">Processes in this service</h1>
+
+  <div class="processes-container">
+    {% if processes|length == 0 %}
+      <div class="empty-message">
+        No processes available.
+      </div>
+    {% else %}
+      <div class="table-wrapper">
+        <table id="processes-table" class="responsive-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in processes %}
+              <tr>
+                <td>
+                  <a href="/api/processes/{{ item.id }}?f=html" target="_blank" rel="noopener noreferrer">
+                    {{ item.title|default:item.id }}
+                  </a>
+                </td>
+                <td>{{ item.description|default:"No description" }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if links %}
+        <div class="pagination-buttons" style="margin-top: 1.5rem; text-align: center;">
+          {% for link in links %}
+            {% if link.rel == "prev" %}
+              <a href="{{ link.href }}" class="pagination-link">← Previous</a>
+            {% elif link.rel == "next" %}
+              <a href="{{ link.href }}" class="pagination-link">Next →</a>
+            {% endif %}
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endif %}
+  </div>
+{% endblock %}
+
+{% block styles %}
+        <link rel="stylesheet" href="{% static 'css/processes.css' %}">
+{% endblock %}

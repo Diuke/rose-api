@@ -31,7 +31,7 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', True)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 200 * 1000000 #200 MB
 
@@ -40,9 +40,13 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 200 * 1000000 #200 MB
 # BASE_API_URL = 'http://localhost:8000/api/' # For linkbuilding - use trailing slash
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+# BASE_DIR = Path(__file__).resolve().parent.parent
+
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
+GDAL_LIBRARY_PATH = os.environ.get("GDAL_LIBRARY_PATH")
+GEOS_LIBRARY_PATH = os.environ.get("GEOS_LIBRARY_PATH")
 
 # Application definition
 
@@ -103,7 +107,7 @@ DATABASES = {
         "ENGINE": "django.contrib.gis.db.backends.postgis",
         "HOST": os.getenv('POSTGRES_HOST'),
         "PORT": os.getenv('POSTGRES_PORT'),
-        "NAME": os.getenv('POSTGRES_DB'),
+        "NAME": os.getenv('POSTGRES_NAME'),
         "USER": os.getenv('POSTGRES_USER'),
         "PASSWORD": os.getenv('POSTGRES_PASSWORD')
     },

@@ -2,6 +2,7 @@ import json
 
 from django.http import HttpRequest
 from django.conf import settings
+from django.shortcuts import render
 
 from geoapi import models as geoapi_models
 from geoapi import serializers as geoapi_serializers
@@ -36,7 +37,7 @@ def process_by_id(request: HttpRequest, id: str):
     links += landing_links
 
     # Self link
-    self_link_href = f'{base_url}/processes/'
+    self_link_href = f'{base_url}processes/'
     if query_params:
         self_link_href += f'?{query_params}'
     links.append(
@@ -47,7 +48,7 @@ def process_by_id(request: HttpRequest, id: str):
     process_module = processes_utils.get_process_by_id(id)
     # Execution link
     links.append(LinkSchema(
-        href=f"{base_url}/processes/{process_module.id}/execution",
+        href=f"{base_url}processes/{process_module.id}/execution",
         rel="http://www.opengis.net/def/rel/ogc/1.0/execute",
         title="Execute process"
     ))
@@ -72,6 +73,11 @@ def process_by_id(request: HttpRequest, id: str):
         inputs=inputs,
         outputs=outputs
     )
+
+    if f in utils.F_HTML:
+        return render(request, "processes/process.html", {
+            "process": process_to_return
+        })
 
     serialized = json.dumps(process_to_return.to_object())
     return geoapi_responses.response_json_200(serialized)

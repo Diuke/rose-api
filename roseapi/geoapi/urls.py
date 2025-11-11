@@ -10,6 +10,7 @@ urlpatterns = [
     # Features
     path("collections", geoapi_api.collections),
     path("collections/<str:collectionId>", geoapi_api.collection_by_id),
+    path("collections/<str:collectionId>/input", geoapi_api.collection_input),
     path("collections/<str:collectionId>/items/<int:featureId>", geoapi_api.collection_item_by_id),
 
     # Features (Items) / EDR
@@ -23,5 +24,5 @@ urlpatterns = [
     path("jobs", geoapi_api.jobs),
     path("jobs/<str:jobId>", geoapi_api.job_by_id),
     path("jobs/<str:jobId>/results", geoapi_api.job_result_by_id),
-    
+
 ]

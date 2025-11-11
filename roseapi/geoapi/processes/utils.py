@@ -1,12 +1,14 @@
 import json
 import os
 import datetime
+import importlib
 from pkgutil import walk_packages
 import geoapi.processes.processes as geoapi_processes
 from django.http import HttpRequest
 from celery.contrib.abortable import AbortableTask
 from celery.utils.log import get_task_logger
 from roseapi.celery import app
+
 
 from geoapi.models import GeoAPIConfiguration, Job
 
@@ -36,14 +38,24 @@ class BaseProcess():
         pass
 
 def get_processes_list() -> list[BaseProcess]:
-    processes_classes: list[BaseProcess] = []
-    module = geoapi_processes
-    for submodule in walk_packages(module.__path__):
-        submodule_name = submodule.name
-        module = submodule.module_finder.find_module(f'{submodule_name}').load_module(f'{submodule_name}')
-        new_process: BaseProcess = module.Process()
-        processes_classes.append(new_process)        
-    return processes_classes
+    processes: list[BaseProcess] = []
+    pkg_path   = geoapi_processes.__path__
+    pkg_prefix = geoapi_processes.__name__ + '.'
+
+    for finder, full_name, ispkg in walk_packages(pkg_path, prefix=pkg_prefix):
+        try:
+            if hasattr(finder, 'find_module'):
+                loader = finder.find_module(full_name)
+                module = loader.load_module(full_name)
+            else:
+                raise AttributeError("No find_module on finder")
+        except Exception:
+            module = importlib.import_module(full_name)
+
+        proc: BaseProcess = module.Process()
+        processes.append(proc)
+
+    return processes
 
 def get_process_by_id(id: str) -> BaseProcess:
     processes = get_processes_list()

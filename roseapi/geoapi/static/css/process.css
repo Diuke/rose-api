@@ -1,0 +1,148 @@
+  .process-detail {
+    font-family: 'Montserrat';
+    max-width: 1000px;
+    margin: auto;
+    margin-top: 20px;
+  }
+  .tags {
+    margin: 1rem 0;
+  }
+  .tag {
+    background-color: #cfe2e4;
+    color: #555;
+    padding: 0.3rem 0.6rem;
+    margin-right: 0.5rem;
+    border-radius: 0.3rem;
+    font-size: 0.9rem;
+    display: inline-block;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  th, td {
+    border: 1px solid #ccc;
+    padding: 0.6rem;
+    text-align: left;
+  }
+  th {
+    background-color: #cfe2e4;
+  }
+  .paddings {
+    padding-bottom: 0.5rem;;
+  }
+  .process-detail a {
+    color: #008bd1;
+    text-decoration: none;
+    font-weight: 500;
+    display: inline-block;
+    transition: all 0.2s ease-in-out;
+  }
+
+  .process-detail a:hover {
+    color: #0c47a1;
+    text-decoration: underline;
+    transform: scale(1.03);
+  }
+
+  .process-detail {
+  font-family: 'Montserrat', sans-serif;
+  max-width: 1000px;
+  margin: 20px auto;
+  padding: 0 1rem;
+}
+
+.tags {
+  margin: 1rem 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tag {
+  background-color: #cfe2e4;
+  color: #555;
+  padding: 0.3rem 0.6rem;
+  border-radius: 0.3rem;
+  font-size: 0.9rem;
+  display: inline-block;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+th, td {
+  border: 1px solid #ccc;
+  padding: 0.6rem;
+  text-align: left;
+}
+
+th {
+  background-color: #cfe2e4;
+}
+
+.paddings {
+  padding-bottom: 0.5rem;
+}
+
+.process-detail a {
+  color: #008bd1;
+  text-decoration: none;
+  font-weight: 500;
+  display: inline-block;
+  transition: all 0.2s ease-in-out;
+}
+
+.process-detail a:hover {
+  color: #0c47a1;
+  text-decoration: underline;
+  transform: scale(1.03);
+}
+
+/* Адаптивность таблицы */
+@media (max-width: 768px) {
+  table,
+  thead,
+  tbody,
+  th,
+  td,
+  tr {
+    display: block;
+    width: 100%;
+  }
+
+  thead {
+    display: none;
+  }
+
+  tr {
+    margin-bottom: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 0.4rem;
+    padding: 0.8rem;
+    background-color: #fff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  }
+
+  td {
+    padding: 0.5rem 0;
+    text-align: right;
+    position: relative;
+  }
+
+  td::before {
+    content: attr(data-label);
+    position: absolute;
+    left: 1rem;
+    top: 0.5rem;
+    font-weight: bold;
+    text-align: left;
+    color: #333;
+  }
+}

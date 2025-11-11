@@ -1,10 +1,31 @@
-<h1>Landing Page</h1>
-<h3>{{ data.title }}</h3>
-<h3>{{ data.description }}</h3>
+{% extends 'base/base.html' %}
+{% load static %}
 
-<ul>
-    {% for link in data.links %}
-        <li>{{ link.title }} - <a href="{{ link.href }}">{{ link.href }}<a/></li>
-    {% endfor %}
-</ul>
+{% block content %}
+ <h1 class="landing-title">Links in this service</h1>
+<p class="landing-description">{{ data.description }}</p>
 
+<div class="table-wrapper">
+  <table class="styled-table">
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>URL</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for link in data.links %}
+        <tr>
+          <td>{{ link.title }}</td>
+          <td><a href="{{ link.href }}" target="_blank" rel="noopener noreferrer">{{ link.href }}</a></td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}
+
+{% block styles %}
+  <link rel="stylesheet" href="{% static 'css/landing.css' %}">
+{% endblock %}

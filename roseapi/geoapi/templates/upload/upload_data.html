@@ -1,0 +1,52 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Upload Data{% endblock %}
+
+{% block styles %}
+  {{ block.super }}
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    integrity="sha512-pIVmS8eYpSBgqYj7xW6+Hg4x3bO6q/zHNqfT8GvCdzCAjLzP9CT0KBA15lI6C6RzWnB0rjH2e4Zw1Q6Xv5K+0A=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
+  <link rel="stylesheet" href="{% static 'css/upload_data.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="upload-wrapper">
+  <div class="control">
+    <select id="collectionSelect" class="btn-select">
+      <option value="">Choose collection…</option>
+    </select>
+  </div>
+
+  <div class="control">
+    <label for="fileInput" class="file-label">
+      <span>Choose file</span>
+      <i class="fa-solid fa-file-arrow-up upload-icon" aria-hidden="true"></i>
+    </label>
+    <input
+      type="file"
+      id="fileInput"
+      accept=".csv,application/geo+json,application/json"
+      hidden
+    >
+  </div>
+
+  <div class="buttons">
+    <button id="previewBtn" class="btn-preview" disabled>Preview</button>
+    <button id="uploadBtn" class="btn-upload" disabled>Upload</button>
+  </div>
+
+  <div id="previewArea" class="preview-area">
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+  {{ block.super }}
+  <script src="{% static 'js/upload_data.js' %}"></script>
+{% endblock %}

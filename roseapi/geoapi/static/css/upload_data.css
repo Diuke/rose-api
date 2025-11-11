@@ -1,0 +1,119 @@
+.upload-wrapper {
+  max-width: 900px;
+  margin: auto;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.control {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.btn-select {
+  width: 300px;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  border: 1px solid #ccc;
+  background: #f0f0f0;
+  font-size: 1rem;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  font-family: Montserrat;
+}
+
+.file-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 300px;
+  padding: 1.2rem;
+  border: 2px dashed #aaa;
+  border-radius: 12px;
+  background: #fafafa;
+  cursor: pointer;
+  position: relative;
+  font-size: 1rem;
+      font-family: Montserrat;
+
+}
+
+.upload-icon {
+  font-size: 1.5rem;
+  margin-left: 0.75rem;
+  color: #555;
+}
+
+.buttons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.buttons button {
+  padding: 0.75rem 2.5rem;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform .1s ease;
+  font-family: Montserrat;
+}
+
+.btn-preview {
+  background-color: #4A90E2;
+  color: #fff;
+}
+.btn-upload {
+  background-color: #3B9E9E;
+  color: #fff;
+}
+
+.buttons button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.buttons button:hover:not(:disabled) {
+  transform: scale(1.05);
+}
+
+.preview-area {
+  border: 1px solid #807e7e;
+  border-radius: 12px;
+  background: #f9f9f9;
+
+  min-height: 400px;
+  max-height: 60vh;
+
+  padding: 1rem;
+  overflow-y: auto;
+  overflow-x: auto;
+  box-sizing: border-box;
+}
+
+@media (max-width: 600px) {
+  .control, .buttons {
+    flex-direction: column;
+  }
+  .btn-select,
+  .file-label,
+  .buttons button {
+    width: 100%;
+  }
+}
+
+.preview-area pre {
+  font-family: monospace;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.preview-area .key { color: #922; }
+.preview-area .string { color: #080; }
+.preview-area .num { color: #00f; }
+.preview-area .bool { color: #a00; }
+.preview-area .null { color: #888; }
