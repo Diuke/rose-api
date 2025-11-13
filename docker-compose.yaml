@@ -16,6 +16,7 @@ services:
     volumes:
       - ${HOST_OUTPUT_DIR}:/results
       - ${HOST_PROCESSING_DIR}:/geoapi/processes/processes/custom_processes
+      - ${HOST_STORAGE_DIR}:/data_dir
     
   db:
     image: postgis/postgis:16-3.4-alpine
