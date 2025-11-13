@@ -16,8 +16,14 @@ import os
 
 # Determine if using the local environment file for running locally
 is_running_in_docker = os.getenv('RUNNING_IN_DOCKER', 0)
+print(f"Running in docker: {is_running_in_docker}")
 if is_running_in_docker == 0:
     load_dotenv(override=True)
+    RESULTS_DIR = os.getenv('HOST_OUTPUT_DIR', "")
+    PROCESSING_STORAGE_DIR = os.getenv('HOST_STORAGE_DIR', "")
+else:
+    RESULTS_DIR = "/results"
+    PROCESSING_STORAGE_DIR = "/data_dir"
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 #BASE_DIR = Path(__file__).resolve().parent.parent
@@ -98,6 +104,8 @@ WSGI_APPLICATION = 'roseapi.wsgi.application'
 # CELERY
 # Celery Configuration Options
 CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL')
+CELERY_WORKER_REDIRECT_STDOUTS = False
+CELERY_WORKER_REDIRECT_STDOUTS_LEVEL = "WARNING"
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
@@ -151,6 +159,15 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # CORS Configuration
 CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_HEADERS = (
+    "accept",
+    "prefer",
+    "authorization",
+    "content-type",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+)
 ALLOWED_HOSTS = ["*"]
 
 CSRF_TRUSTED_ORIGINS = [

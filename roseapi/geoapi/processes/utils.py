@@ -44,7 +44,6 @@ def get_processes_list() -> list[BaseProcess]:
     module = geoapi_processes
     for submodule in walk_packages(module.__path__):
         submodule_name = submodule.name
-        print(submodule_name)
         if submodule_name != "modules":
             module = submodule.module_finder.find_module(f'{submodule_name}').load_module(f'{submodule_name}')
             new_process: BaseProcess = module.Process()
@@ -55,7 +54,6 @@ def get_processes_list() -> list[BaseProcess]:
         module = geoapi_custom_processes
         for submodule in walk_packages(module.__path__):
             submodule_name = submodule.name
-            print(submodule_name)
             if submodule_name != "modules":
                 module = submodule.module_finder.find_module(f'{submodule_name}').load_module(f'{submodule_name}')
                 new_process: BaseProcess = module.Process()
